@@ -2,8 +2,8 @@ from langchain import LLMChain, PromptTemplate
 from langchain.llms import BaseLLM
 
 
-class Decide(LLMChain):
-    """Chain to generates tasks."""
+class Plan(LLMChain):
+    """Plan the next step."""
 
     @classmethod
     def from_llm(cls, llm: BaseLLM, verbose: bool = True) -> LLMChain:
