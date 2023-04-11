@@ -1,6 +1,7 @@
 from langchain import LLMChain, PromptTemplate
 from langchain.llms import BaseLLM
 
+
 class Decide(LLMChain):
     """Chain to generates tasks."""
 
@@ -19,6 +20,11 @@ class Decide(LLMChain):
         )
         prompt = PromptTemplate(
             template=task_creation_template,
-            input_variables=["result", "task_description", "incomplete_tasks", "objective"],
+            input_variables=[
+                "result",
+                "task_description",
+                "incomplete_tasks",
+                "objective",
+            ],
         )
         return cls(prompt=prompt, llm=llm, verbose=verbose)
