@@ -24,11 +24,11 @@ class TestAgent:
             max_iterations=5,
         )
 
-    def test_simple_logic(self):
+    def test_logic(self):
         result = self.agent.run(
-            objective="What is Elon Musk's daughter's age raised to the power of 42?"
+            objective="What is Elon Musk's youngest daughter's age raised to the power of 42?"
         )
         assert result == "109418989131512359209"
 
-    def test_critical_thinking(self):
+    def test_thinking(self):
         self.agent.run(objective="How can we ensure the safe development of AGI?")

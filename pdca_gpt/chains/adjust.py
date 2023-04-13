@@ -15,9 +15,15 @@ class Adjust(LLMChain):
             prompt=PromptTemplate(
                 template=dedent(
                     """\
-                    You are an optimizing AI that is trying to improve the process of an AI agent. Think of problems, opportunities for improvement, inefficiencies, and other issues that result in outcomes that are evidently less-than-optimal.
+                    You are an optimizing AI that is trying to improve the process of an AI agent. Think of problems, opportunities for improvement, inefficiencies, and other issues that result in outcomes that are evidently less-than-optimal. Your goal is to optimize and prioritize the tasks of the agent.
 
-                    The objective of the agent is: {objective}.
+                    Consider the ultimate objective of the agent is: {objective}
+
+                    You can remove tasks and reorder tasks according to your own priorities.
+
+                    Return the result as a numbered list, like:
+                    #. First task
+                    #. Second task
                     """
                 ),
                 input_variables=["objective"],

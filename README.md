@@ -1,5 +1,10 @@
 # PDCA-GPT
 
+## TODO
+
+1. Get the test cases to work reasonably!
+2. Consider refactoring the structure of `agent.py` into a pure plan-do-check-adjust
+
 ## Development
 
 1. Clone the repo
@@ -11,6 +16,6 @@ Make sure to run `poetry shell` to activate the virtual env!
 
 ```bash
 poetry run pytest -s # run all tests
-poetry run pytest -s -k 'math' # only run tests that include 'math' in the function name
+poetry run pytest -s -k 'logic' # only run tests that include 'logic' in the function name
 ```
 

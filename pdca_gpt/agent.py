@@ -8,7 +8,7 @@ from langchain.schema import AgentAction, AgentFinish
 from langchain.vectorstores import VectorStore
 from pydantic import BaseModel, Field
 
-from pdca_gpt.chains import Plan, Do, Check, Adjust, Prioritize
+from pdca_gpt.chains import Plan, Do, Check, Adjust
 
 load_dotenv()
 
@@ -39,8 +39,7 @@ class Agent(Chain, BaseModel):
     plan: Plan = Field(...)
     do: Do = Field(...)
     check: Check = Field(...)
-    # adjust: Adjust = Field(...)
-    prioritize: Prioritize = Field(...)
+    adjust: Adjust = Field(...)
     task_id_counter: int = Field(1)
     vectorstore: VectorStore = Field(init=False)
     max_iterations: Optional[int] = None
@@ -72,15 +71,15 @@ class Agent(Chain, BaseModel):
                 self.task_id_counter += 1
                 self.add_task({"task_name": t, "task_id": self.task_id_counter})
 
-    def prioritize_tasks(self, objective: str, current_task_id: int):
-        prioritized_tasks = self.prioritize.run(
+    def adjust_tasks(self, objective: str, current_task_id: int):
+        adjusted_tasks = self.adjust.run(
             objective=objective,
             task_names=[t["task_name"] for t in self.task_list],
             next_task_id=current_task_id + 1,
         ).split("\n")
 
         self.task_list = deque()
-        for t in map(str.strip, prioritized_tasks):
+        for t in map(str.strip, adjusted_tasks):
             if t:
                 task_parts = t.split(".", 1)
                 if len(task_parts) == 2:
@@ -164,7 +163,7 @@ class Agent(Chain, BaseModel):
             )
 
             # Step 5: Prioritize tasks
-            self.prioritize_tasks(objective=objective, current_task_id=task["task_id"])
+            self.adjust_tasks(objective=objective, current_task_id=task["task_id"])
 
             num_iters += 1
             if self.max_iterations is not None and num_iters == self.max_iterations:
@@ -183,8 +182,7 @@ class Agent(Chain, BaseModel):
             plan=Plan.from_llm(llm, verbose=verbose),
             do=Do.from_llm(llm, verbose=verbose),
             check=Check.from_llm(llm, verbose=verbose),
-            # adjust=Adjust.from_llm(llm, verbose=verbose),
-            prioritize=Prioritize.from_llm(llm, verbose=verbose),
+            adjust=Adjust.from_llm(llm, verbose=verbose),
             vectorstore=vectorstore,
             **kwargs,
         )
