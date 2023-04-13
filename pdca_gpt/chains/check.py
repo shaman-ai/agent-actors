@@ -15,16 +15,15 @@ class Check(LLMChain):
             prompt=PromptTemplate(
                 template=dedent(
                     """\
-                    You are an evaluation AI that checks the result of an execution agent against the objective: {objective}.
+                    You are an evaluation AI that checks the result of an execution agent against the objective: {objective}
 
-                    Review the results of the last completed task and decide whether the task
-                    was accurately completed or not.
+                    Review the results of the last completed task below and decide whether the task was accurately completed or not.
 
-                    The last completed task has the result: {result}
-                    This result was based on this task: {task}
+                    The task was: {task}
+                    The result was {result}
 
-                    Does the result accurately complete the objective? If so, return "Complete".
                     Does the result accurately complete the task? If so, return "Next".
+                    Does the result accurately complete the objective? If so, return "Complete".
                     Otherwise, return just the description of a task that will produce the expected result, with no preamble.
                     """
                 ),

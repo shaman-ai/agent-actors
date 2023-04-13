@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 from langchain import LLMChain, PromptTemplate
 from langchain.chains import LLMMathChain
 from langchain.agents import MRKLChain, ZeroShotAgent, Tool
@@ -43,9 +45,20 @@ class Do(MRKLChain):
             ),
         ]
 
-        prefix = """You are an AI who performs one task based on the following objective: {objective}. Take into account these previously completed tasks: {context}."""
-        suffix = """Question: {task}
-        {agent_scratchpad}"""
+        prefix = dedent(
+            """\
+            You are an AI who performs one task based on the following objective: {objective}
+
+            Take into account these previously completed tasks: {context}
+            """
+        )
+        suffix = dedent(
+            """\
+            Question: {task}
+
+            Scratchpad: {agent_scratchpad}
+            """
+        )
 
         agent = ZeroShotAgent.from_llm_and_tools(
             llm=llm,

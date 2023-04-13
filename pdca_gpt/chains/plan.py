@@ -13,7 +13,7 @@ class Plan(LLMChain):
             prompt=PromptTemplate(
                 template=dedent(
                     """\
-                    You are an expert planner that uses the result of an AI agent to decide new todo items with the following objective: {objective}.
+                    You are an expert planner that uses the result of an AI agent to decide new todo items with the following objective: {objective}
 
                     The last todo was: {task}
                     The result was: {result}

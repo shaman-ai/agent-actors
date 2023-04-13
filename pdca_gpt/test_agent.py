@@ -24,7 +24,7 @@ class TestAgent:
             max_iterations=5,
         )
 
-    def test_lookup_and_math(self):
+    def test_simple_logic(self):
         result = self.agent.run(
             objective="What is Elon Musk's daughter's age raised to the power of 42?"
         )
