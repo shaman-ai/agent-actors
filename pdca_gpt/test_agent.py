@@ -26,9 +26,9 @@ class TestAgent:
 
     def test_logic(self):
         result = self.agent.run(
-            objective="What is Elon Musk's youngest daughter's age raised to the power of 42?"
+            objective="What is Sergey Brin's age raised to the power of 4?"
         )
-        assert result == "109418989131512359209"
+        assert result == "5764801"
 
     def test_thinking(self):
         self.agent.run(objective="How can we ensure the safe development of AGI?")
