@@ -1,22 +1,33 @@
 [tool.poetry]
-name = "ooda-gpt"
+name = "pdca-gpt"
 version = "0.1.0"
 description = "An auto-GPT that observes and remembers"
-authors = ["Luke Heine", "Cyrus Nouroozi"]
+authors = ["Cyrus Nouroozi", "Luke Heine"]
 license = "BUSL-1.1"
 readme = "README.md"
-packages = [{include = "ooda_gpt"}]
+packages = [{include = "pdca_gpt"}]
 
 [tool.poetry.dependencies]
 python = ">=3.11,<4.0"
-pydantic = "^1.10.7"
-langchain = { git = "https://github.com/hwchase17/langchain.git", branch = "master" }
 aiohttp = "^3.8.4"
+pydantic = "^1.10.7"
+langchain = {git = "https://github.com/hwchase17/langchain.git", rev = "master"}
+wolframalpha = "^5.0.0"
+python-dotenv = "^1.0.0"
+openai = "^0.27.4"
+wikipedia = "^1.4.0"
+tiktoken = "^0.3.3"
+
+[tool.poetry.group.typing]
+optional = true
 
 [tool.poetry.group.typing.dependencies]
 mypy = "^1.2.0"
 types-pyyaml = "^6.0.12.9"
 types-requests = "^2.28.11.17"
+
+[tool.poetry.group.dev]
+optional = true
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
@@ -24,6 +35,8 @@ setuptools = "^67.6.1"
 ipdb = "^0.13.13"
 faiss-cpu = "^1.7.3"
 black = "^23.3.0"
+ipython = "^8.12.0"
+pytest = "^7.3.0"
 
 [build-system]
 requires = ["poetry-core"]

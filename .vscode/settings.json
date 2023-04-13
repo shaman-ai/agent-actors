@@ -8,6 +8,8 @@
     "**/Thumbs.db": true,
     "**/.ruby-lsp": true,
     ".venv/": true,
-    ".DS_Store": true
+    ".DS_Store": true,
+    "**/__pycache__": true,
+    ".pytest_cache/": true
   }
 }
