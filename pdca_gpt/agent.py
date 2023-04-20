@@ -62,11 +62,10 @@ class Agent(Chain, BaseModel):
     def output_keys(self) -> List[str]:
         return ["result"]
 
-    def generate_tasks(self, task: str, result: Dict, objective: str):
+    def plan_tasks(self, task: str, objective: str):
         generated_tasks = self.plan.run(
             objective=objective,
             task=task,
-            result=result,
             incomplete_tasks=", ".join(t["task_name"] for t in self.task_list),
         ).split("\n")
 
@@ -138,11 +137,17 @@ class Agent(Chain, BaseModel):
         self.add_task({"task_id": 0, "task_name": first_task})
         num_iters = 0
 
-        while self.task_list:
-            print_task_list(self.task_list)
+        # Step 4: Create new tasks
 
-            # Step 1: Pull the first task
+        while self.task_list:
             task = self.task_list.popleft()
+            self.plan_tasks(
+                task=task["task_name"],
+                objective=objective,
+            )
+
+            print_task_list(self.task_list)
+            # Step 1: Pull the first task
             print_next_task(task)
 
             # Step 2: Do the task
@@ -159,12 +164,7 @@ class Agent(Chain, BaseModel):
             # elif ok.return_values["state"] == "complete":
             #     return {"result": result}
 
-            # Step 4: Create new tasks
-            self.generate_tasks(
-                task=task["task_name"],
-                result=result,
-                objective=objective,
-            )
+
 
             # Step 5: Prioritize tasks
             self.adjust_tasks(objective=objective, current_task_id=task["task_id"])

@@ -17,6 +17,7 @@ python-dotenv = "^1.0.0"
 openai = "^0.27.4"
 wikipedia = "^1.4.0"
 tiktoken = "^0.3.3"
+gptcache = "^0.1.17"
 
 [tool.poetry.group.typing]
 optional = true
