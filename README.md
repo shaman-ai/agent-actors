@@ -12,6 +12,18 @@
 
 Make sure to run `poetry shell` to activate the virtual env!
 
+### REPL-Driven Development
+
+```bash
+poetry run ipython
+```
+
+Then in IPython run:
+
+```python
+from importlib import reload
+```
+
 ### Tests
 
 ```bash

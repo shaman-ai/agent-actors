@@ -12,12 +12,13 @@
     "**/__pycache__": true,
     ".pytest_cache/": true
   },
-  "python.formatting.provider": "black",
+  "python.formatting.provider": "none",
   "[python]": {
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
       "source.fixAll": true,
       "source.organizeImports": true
-    }
+    },
+    "editor.defaultFormatter": "ms-python.black-formatter"
   }
 }
