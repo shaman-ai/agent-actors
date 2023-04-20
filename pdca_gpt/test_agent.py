@@ -1,5 +1,5 @@
 from faiss import IndexFlatL2
-from langchain import OpenAI
+from langchain.chat_models import ChatOpenAI
 from langchain.docstore import InMemoryDocstore
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
@@ -13,7 +13,7 @@ class TestAgent:
     @classmethod
     def setup_class(cls):
         cls.agent = Agent.from_llm(
-            llm=OpenAI(temperature=0),
+            llm=ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo"),
             vectorstore=FAISS(
                 embedding_function=OpenAIEmbeddings().embed_query,
                 index=IndexFlatL2(1536),
@@ -25,9 +25,7 @@ class TestAgent:
         )
 
     def test_logic(self):
-        result = self.agent.run(
-            objective="What is Sergey Brin's age raised to the power of 4?"
-        )
+        result = self.agent.run(objective="What is Sergey Brin's age times 12?")
         assert result == "5764801"
 
     def test_thinking(self):
