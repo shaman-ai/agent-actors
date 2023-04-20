@@ -21,12 +21,14 @@ class Adjust(LLMChain):
 
                     You can remove tasks and reorder tasks according to your own priorities.
 
+                    The agent's current tasks are: {current_tasks}
+
                     Return the result as a numbered list, like:
                     #. First task
                     #. Second task
                     """
                 ),
-                input_variables=["objective"],
+                input_variables=["objective", "current_tasks"],
             ),
             llm=llm,
             verbose=verbose,

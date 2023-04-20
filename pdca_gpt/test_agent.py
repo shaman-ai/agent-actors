@@ -24,9 +24,14 @@ class TestAgent:
             max_iterations=5,
         )
 
-    def test_logic(self):
+    def test_search_and_math(self):
         result = self.agent.run(objective="What is Sergey Brin's age times 12?")
-        assert result == "5764801"
+        assert "588" in result
+
+    def test_lookup_and_thinking(self):
+        self.agent.run(
+            objective="Is it a good idea to start a startup that transcribes Zoom meetings?"
+        )
 
     def test_thinking(self):
         self.agent.run(objective="How can we ensure the safe development of AGI?")

@@ -7,6 +7,9 @@ license = "BUSL-1.1"
 readme = "README.md"
 packages = [{include = "pdca_gpt"}]
 
+[tool.ruff]
+line-length = -1
+
 [tool.poetry.dependencies]
 python = ">=3.11,<4.0"
 aiohttp = "^3.8.4"

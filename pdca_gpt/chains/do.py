@@ -1,16 +1,16 @@
 from textwrap import dedent
 
 from langchain import LLMChain, PromptTemplate
+from langchain.agents import MRKLChain, Tool, ZeroShotAgent
 from langchain.chains import LLMMathChain
-from langchain.agents import MRKLChain, ZeroShotAgent, Tool
 from langchain.llms import BaseLLM
 from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.utilities import (
     GoogleSerperAPIWrapper,
-    WolframAlphaAPIWrapper,
     WikipediaAPIWrapper,
+    WolframAlphaAPIWrapper,
 )
 
 

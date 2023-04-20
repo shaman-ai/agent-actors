@@ -13,16 +13,21 @@ class Plan(LLMChain):
             prompt=PromptTemplate(
                 template=dedent(
                     """\
-                    You are an expert planner that uses the result of an AI agent to decide new todo items with the following objective: {objective}
+                    You are an expert planner that plans the next steps for an AI agent.
+                    The agent's objective is {objective}
 
-                    The current todo is: {task}
+                    These are the incomplete tasks, in order: {incomplete_tasks}
 
-                    These are incomplete todo items: {incomplete_tasks}
+                    Decide the minimal set of new tasks for the agent to complete that do not overlap with the incomplete tasks.
 
-                    Based on the result, decide the minimal set of new todo items to be completed by the AI system that do not overlap with incomplete todo items. Return the tasks as an array. If no additional todo items are required, then don't return anything.
+                    Return the result as a numbered list, like:
+                    #. First task
+                    #. Second task
+
+                    If no additional tasks items are required to complete the objective, don't return anything.
                     """
                 ),
-                input_variables=["objective", "task", "incomplete_tasks"],
+                input_variables=["objective", "incomplete_tasks"],
             ),
             llm=llm,
             verbose=verbose,

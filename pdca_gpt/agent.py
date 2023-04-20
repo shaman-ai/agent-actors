@@ -44,15 +44,12 @@ class Agent(Chain, BaseModel):
     do: Do = Field(...)
     check: Check = Field(...)
     adjust: Adjust = Field(...)
-    task_id_counter: int = Field(1)
+    task_id_counter: int = Field(0)
     vectorstore: VectorStore = Field(init=False)
     max_iterations: Optional[int] = None
 
     class Config:
         arbitrary_types_allowed = True
-
-    def add_task(self, task: Dict):
-        self.task_list.append(task)
 
     @property
     def input_keys(self) -> List[str]:
@@ -62,33 +59,19 @@ class Agent(Chain, BaseModel):
     def output_keys(self) -> List[str]:
         return ["result"]
 
-    def plan_tasks(self, task: str, objective: str):
+    def plan_tasks(self, objective: str):
         generated_tasks = self.plan.run(
             objective=objective,
-            task=task,
             incomplete_tasks=", ".join(t["task_name"] for t in self.task_list),
         ).split("\n")
 
         for t in map(str.strip, generated_tasks):
             if t:
                 self.task_id_counter += 1
-                self.add_task({"task_name": t, "task_id": self.task_id_counter})
-
-    def adjust_tasks(self, objective: str, current_task_id: int):
-        adjusted_tasks = self.adjust.run(
-            objective=objective,
-            task_names=[t["task_name"] for t in self.task_list],
-            next_task_id=current_task_id + 1,
-        ).split("\n")
-
-        self.task_list = deque()
-        for t in map(str.strip, adjusted_tasks):
-            if t:
-                task_parts = t.split(".", 1)
-                if len(task_parts) == 2:
-                    task_id = int(task_parts[0].strip())
-                    task_name = task_parts[1].strip()
-                    self.task_list.append({"task_id": task_id, "task_name": task_name})
+                task_name = t.split(". ")[1]
+                self.task_list.append(
+                    {"task_name": task_name, "task_id": self.task_id_counter}
+                )
 
     def do_task(self, objective: str, task: Dict, k: int = 5) -> str:
         # Get related, completed tasks
@@ -129,52 +112,58 @@ class Agent(Chain, BaseModel):
             print("Task complete!")
             return AgentFinish({"state": "next"}, "")
 
+    def adjust_tasks(self, objective: str):
+        adjusted_tasks = self.adjust.run(
+            objective=objective,
+            current_tasks=[t["task_name"] for t in self.task_list],
+        ).split("\n")
+
+        self.task_list = deque()
+        for t in map(str.strip, adjusted_tasks):
+            if t:
+                task_parts = t.split(".", 1)
+                if len(task_parts) == 2:
+                    task_id = int(task_parts[0].strip())
+                    task_name = task_parts[1].strip()
+                    self.task_list.append({"task_id": task_id, "task_name": task_name})
+
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Run the agent."""
         objective = inputs["objective"]
-
-        first_task = inputs.get("first_task", "Make a todo list")
-        self.add_task({"task_id": 0, "task_name": first_task})
         num_iters = 0
+        result = None
 
-        # Step 4: Create new tasks
-
-        while self.task_list:
-            task = self.task_list.popleft()
-            self.plan_tasks(
-                task=task["task_name"],
-                objective=objective,
-            )
-
+        while True:
+            # Step 1: Plan
+            self.plan_tasks(objective=objective)
             print_task_list(self.task_list)
-            # Step 1: Pull the first task
-            print_next_task(task)
 
-            # Step 2: Do the task
+            # Step 2: Do
+            task = self.task_list.popleft()
+            print_next_task(task)
             result = self.do_task(objective=objective, task=task)
             print_task_result(result)
 
             # Step 3: Check the result
-            # ok = self.check_task(objective=objective, task=task, result=result)
-            # if not ok:
-            #     # If the task is not complete, refine it and add it to the top of the task list
-            #     refined_task = {"task_id": task["task_id"], "task_name": result}
-            #     print_refined_task(refined_task)
-            #     self.task_list.insert(0, refined_task)
-            # elif ok.return_values["state"] == "complete":
-            #     return {"result": result}
+            ok = self.check_task(objective=objective, task=task, result=result)
+            if not ok:
+                # If the task is not complete, refine it and add it to the top of the task list
+                refined_task = {"task_id": task["task_id"], "task_name": result}
+                print_refined_task(refined_task)
+                self.task_list.insert(0, refined_task)
+            elif ok.return_values["state"] == "complete":
+                return {"result": result}
 
+            if not self.task_list:
+                return {"result": result}
 
-
-            # Step 5: Prioritize tasks
-            self.adjust_tasks(objective=objective, current_task_id=task["task_id"])
+            # Step 4: Adjust
+            self.adjust_tasks(objective=objective)
 
             num_iters += 1
             if self.max_iterations is not None and num_iters == self.max_iterations:
                 print_heading("AGENT ENDING", color="91")
                 break
-
-        return {"result": result}
 
     @classmethod
     def from_llm(
