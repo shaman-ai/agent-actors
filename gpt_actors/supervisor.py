@@ -1,4 +1,5 @@
-from collections import deque
+import json
+from collections import defaultdict, deque
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
@@ -8,19 +9,38 @@ from langchain.vectorstores import VectorStore
 from pydantic import BaseModel, Field
 from termcolor import colored
 
-from pdca_gpt.chains import Adjust, Check, Do, Plan
+from gpt_actors.chains import Adjust, Check, Do, Plan
 
 load_dotenv()
 
 
 def print_heading(heading: str, color: str):
-    return print(colored(f"*****{heading}*****", color))
+    return print(colored(f"\n*****{heading}*****", color))
+
+
+def format_task_id(task: Dict) -> str:
+    return f"{task['actor_id']}.{task['task_id']}"
+
+
+def print_task(task: Dict):
+    fmt_task = f"{format_task_id(task)}: {task['task_name']}"
+    fmt_deps = (
+        f"(depends on {', '.join(format_task_id(d) for d in task['depends_on'])})"
+        if task["depends_on"]
+        else ""
+    )
+    print(f"{fmt_task} {fmt_deps}")
 
 
 def print_task_list(task_list: List[Dict]):
     print_heading("TASK LIST", color="magenta")
+    tasks_by_actor = defaultdict(list)
     for t in task_list:
-        print(str(t["task_id"]) + ": " + t["task_name"])
+        tasks_by_actor[t["actor_id"]].append(t)
+    for actor_id, tasks in tasks_by_actor.items():
+        print(f"Agent {actor_id}")
+        for t in tasks:
+            print_task(t)
 
 
 def print_next_task(task: Dict):
@@ -38,7 +58,7 @@ def print_task_result(result: str):
     print(result)
 
 
-class Agent(Chain, BaseModel):
+class Supervisor(Chain, BaseModel):
     task_list: deque = Field(default_factory=deque)
     plan: Plan = Field(...)
     do: Do = Field(...)
@@ -60,18 +80,14 @@ class Agent(Chain, BaseModel):
         return ["result"]
 
     def plan_tasks(self, objective: str):
-        generated_tasks = self.plan.run(
-            objective=objective,
-            incomplete_tasks=", ".join(t["task_name"] for t in self.task_list),
-        ).split("\n")
-
-        for t in map(str.strip, generated_tasks):
-            if t:
-                self.task_id_counter += 1
-                task_name = t.split(". ")[1]
-                self.task_list.append(
-                    {"task_name": task_name, "task_id": self.task_id_counter}
+        self.task_list += deque(
+            json.loads(
+                self.plan.run(
+                    objective=objective,
+                    incomplete_tasks=", ".join(t["task_name"] for t in self.task_list),
                 )
+            )
+        )
 
     def do_task(self, objective: str, task: Dict, k: int = 5) -> str:
         # Get related, completed tasks
