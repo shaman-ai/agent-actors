@@ -4,9 +4,9 @@ from typing import Any, Dict, List, Optional
 from dotenv import load_dotenv
 from langchain.chains.base import Chain
 from langchain.llms import BaseLLM
-from langchain.schema import AgentFinish
 from langchain.vectorstores import VectorStore
 from pydantic import BaseModel, Field
+from termcolor import colored
 
 from pdca_gpt.chains import Adjust, Check, Do, Plan
 
@@ -14,27 +14,27 @@ load_dotenv()
 
 
 def print_heading(heading: str, color: str):
-    return print(f"\033[{color}m\033[1m\n*****{heading}*****\n\033[0m\033[0m")
+    return print(colored(f"*****{heading}*****", color))
 
 
 def print_task_list(task_list: List[Dict]):
-    print_heading("TASK LIST", color="95")
+    print_heading("TASK LIST", color="magenta")
     for t in task_list:
         print(str(t["task_id"]) + ": " + t["task_name"])
 
 
 def print_next_task(task: Dict):
-    print_heading("NEXT TASK", color="92")
+    print_heading("NEXT TASK", color="red")
     print(str(task["task_id"]) + ": " + task["task_name"])
 
 
 def print_refined_task(task: Dict):
-    print_heading("REFINED TASK", color="94")
+    print_heading("REFINED TASK", color="red")
     print(str(task["task_id"]) + ": " + task["task_name"])
 
 
 def print_task_result(result: str):
-    print_heading("TASK RESULT", color="93")
+    print_heading("TASK RESULT", color="green")
     print(result)
 
 
@@ -107,10 +107,13 @@ class Agent(Chain, BaseModel):
 
         if result.startswith("Complete"):
             print("Objective complete!")
-            return AgentFinish({"state": "complete"}, "")
+            self.task_list = deque()
         elif result.startswith("Next"):
             print("Task complete!")
-            return AgentFinish({"state": "next"}, "")
+        else:
+            refined_task = {"task_id": task["task_id"], "task_name": result}
+            print_refined_task(refined_task)
+            self.task_list.insert(0, refined_task)
 
     def adjust_tasks(self, objective: str):
         adjusted_tasks = self.adjust.run(
@@ -145,14 +148,7 @@ class Agent(Chain, BaseModel):
             print_task_result(result)
 
             # Step 3: Check the result
-            ok = self.check_task(objective=objective, task=task, result=result)
-            if not ok:
-                # If the task is not complete, refine it and add it to the top of the task list
-                refined_task = {"task_id": task["task_id"], "task_name": result}
-                print_refined_task(refined_task)
-                self.task_list.insert(0, refined_task)
-            elif ok.return_values["state"] == "complete":
-                return {"result": result}
+            self.check_task(objective=objective, task=task, result=result)
 
             if not self.task_list:
                 return {"result": result}

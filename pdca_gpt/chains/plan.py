@@ -14,7 +14,7 @@ class Plan(LLMChain):
                 template=dedent(
                     """\
                     You are an expert planner that plans the next steps for an AI agent.
-                    The agent's objective is {objective}
+                    The agent's objective is: {objective}
 
                     These are the incomplete tasks, in order: {incomplete_tasks}
 
