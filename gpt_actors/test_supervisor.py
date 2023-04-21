@@ -1,37 +1,44 @@
+import ray
+from dotenv import load_dotenv
 from faiss import IndexFlatL2
-from gptcache import cache
-from gptcache.adapter.langchain_models import LangChainChat
 from langchain.chat_models import ChatOpenAI
 from langchain.docstore import InMemoryDocstore
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 
-from gpt_actors.supervisor import Supervisor
+from gpt_actors.supervisor import Supervisor, SupervisorChain
 
 
 class TestSupervisor:
-    agent: Supervisor
+    supervisor: Supervisor
 
     @classmethod
     def setup_class(cls):
-        cache.init()
-        cache.set_openai_key()
+        load_dotenv()
+        ray.init()
 
-        cls.agent = Supervisor.from_llm(
-            llm=ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo"),
-            vectorstore=FAISS(
-                embedding_function=OpenAIEmbeddings().embed_query,
-                index=IndexFlatL2(1536),
-                docstore=InMemoryDocstore({}),
-                index_to_docstore_id={},
-            ),
-            verbose=True,
-            max_iterations=5,
+        cls.supervisor = Supervisor.remote(
+            SupervisorChain.from_llm(
+                llm=ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo"),
+                vectorstore=FAISS(
+                    embedding_function=OpenAIEmbeddings().embed_query,
+                    index=IndexFlatL2(1536),
+                    docstore=InMemoryDocstore({}),
+                    index_to_docstore_id={},
+                ),
+                verbose=True,
+            )
         )
 
     def test_search_and_math(self):
-        result = self.agent.run(objective="What is Sergey Brin's age times 12?")
+        ref = self.supervisor.call.remote(
+            objective="What is Sergey Brin's age times 12?"
+        )
+        result = ray.get(ref)
         assert "588" in result
 
     def test_thinking(self):
-        self.agent.run(objective="How can we ensure the safe development of AGI?")
+        ref = self.supervisor.call.remote(
+            objective="How can we ensure the safe development of AGI?",
+        )
+        result = ray.get(ref)
