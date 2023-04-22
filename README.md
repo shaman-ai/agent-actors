@@ -4,7 +4,7 @@ Welcome to agi-actors, a proof-of-concept Python project that demonstrates the p
 
 ## How it works
 
-![agi-actors flow](https://excalidraw.com/#json=6WozckHqWuhc2CfpR7Zoy,ptVrxBzWYIhpTTRezDUMhw)
+![agi-actors flow](./diagram.svg)
 
 1. A **Plan** is made by a **Supervisor** for a given objective, and a semantic zero-shot topological sort is performed on the plan's tasks to adequately distribute tasks across workers.
 2. **Workers** use the ReAct framework to **Do** a task and then **Check** it, improving their work if required.
