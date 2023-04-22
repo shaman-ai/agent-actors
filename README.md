@@ -1,4 +1,4 @@
-# agi-actors: Exploring the Potential of AGI Actors through PDCA and Concurrency
+# agi-actors: The Potential of AGI with Plan-Do-Check-Adjust and the Actor Model of Concurrency
 
 Welcome to agi-actors, a proof-of-concept Python project that demonstrates the possibilities of combining AGI concepts like BabyAGI and AutoGPT with the Plan-Do-Check-Adjust (PDCA) cycle, and the actor model of concurrency for managing large language models (LLMs). agi-actors aims to inspire the LLM community, emphasizing the untapped potential of the actor model of concurrency as applied to generative agents and encouraging further exploration and development.
 
@@ -71,4 +71,20 @@ poetry run ipython
 ```bash
 poetry run pytest -s # run all tests
 poetry run pytest -s -k 'thinking' # How can we ensure the safe development of AGI?
+```
+
+## Citation
+
+Citation
+Please cite the repo if you use the data or code in this repo.
+
+```
+@misc{agiactors,
+  author = {Cyrus Nouroozi},
+  title = {agi-actors: The Potential of AGI with Plan-Do-Check-Adjust and the Actor Model of Concurrency},
+  year = {2023},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/shaman-ai/agi-actors}},
+}
 ```
