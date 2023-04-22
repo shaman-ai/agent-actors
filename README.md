@@ -73,6 +73,10 @@ poetry run pytest -s # run all tests
 poetry run pytest -s -k 'thinking' # How can we ensure the safe development of AGI?
 ```
 
+## License
+
+BUSL-1.1
+
 ## Citation
 
 Citation
