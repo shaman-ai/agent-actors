@@ -11,7 +11,7 @@ packages = [{ include = "gpt_actors" }]
 line-length = -1
 
 [tool.poetry.dependencies]
-python = "^3.10.11"
+python = "^3.10.9"
 aiohttp = "^3.8.4"
 pydantic = "^1.10.7"
 langchain = { git = "https://github.com/hwchase17/langchain.git", rev = "master" }
@@ -23,6 +23,7 @@ tiktoken = "^0.3.3"
 gptcache = "^0.1.17"
 termcolor = "^2.2.0"
 ray = {extras = ["default"], version = "^2.3.1"}
+pytest = "^7.3.1"
 
 [tool.poetry.group.typing]
 optional = true
