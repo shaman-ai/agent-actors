@@ -1,171 +1,76 @@
 import json
-from collections import defaultdict, deque
-from textwrap import dedent
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import ray
-from langchain import LLMChain, PromptTemplate
-from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
-from langchain.retrievers import TimeWeightedVectorStoreRetriever
-from langchain.vectorstores import VectorStore
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from gpt_actors.actor import Actor
+from gpt_actors.agent import Agent
+from gpt_actors.chains.supervisor import Adjust, Plan
 from gpt_actors.models import TaskRecord
-from gpt_actors.utilities.log import print_heading
-from gpt_actors.worker import Worker, WorkerChain
+from gpt_actors.worker import WorkerAgent
 
 
-def print_task_list(ts: List[TaskRecord]):
-    tasks_by_actor = defaultdict(list)
-    for t in ts:
-        tasks_by_actor[t.actor_id].append(t)
-    for actor_id, tasks in tasks_by_actor.items():
-        print(f"Agent {actor_id}")
-        for t in tasks:
-            print(t)
+def print_task_list(tasks_by_worker: List[Dict[str, Any]]):
+    for worker in tasks_by_worker:
+        print(f"Worker {worker['actor_id']}")
+        for task in worker["tasks"]:
+            print(TaskRecord(**task))
 
 
-@ray.remote
-class Supervisor:
-    chain: "SupervisorChain" = Field(init=False)
+class SupervisorAgent(Agent):
+    plan: Plan = Field(init=False)
+    adjust: Adjust = Field(init=False)
+    worker_llm: BaseChatModel = Field(init=False)
 
-    def call(self, *args, **kwargs):
-        return self.chain.run(*args, **kwargs)
-
-
-class SupervisorChain(Actor, BaseModel):
-    llm: BaseChatModel = Field(init=False)
-    plan: "Plan" = Field(init=False)
-    adjust: "Adjust" = Field(init=False)
-    max_iterations: Optional[int] = Field(default=2)
-    memory_retriever: TimeWeightedVectorStoreRetriever = Field(init=False)
-    vectorstore: VectorStore = Field(init=False)
-
-    class Config:
-        arbitrary_types_allowed = True
-
-    @classmethod
-    def from_llm(
-        cls,
-        llm: BaseChatModel,
-        vectorstore: VectorStore,
-        verbose: bool = False,
-        **kwargs,
-    ) -> "SupervisorChain":
-        return cls(
-            llm=llm,
-            plan=Plan.from_llm(llm, verbose=verbose),
-            adjust=Adjust.from_llm(llm, verbose=verbose),
-            vectorstore=vectorstore,
-            **kwargs,
+    def __init__(self, *args, **kwargs):
+        llm = kwargs["llm"]
+        super().__init__(
+            *args, **kwargs, plan=Plan.from_llm(llm), adjust=Adjust.from_llm(llm)
         )
 
-    @property
-    def input_keys(self) -> List[str]:
-        return ["objective"]
+    def call(self, *args, objective: str, **kwargs):
+        context = self.get_summary()
 
-    @property
-    def output_keys(self) -> List[str]:
-        return ["result"]
+        tasks_by_worker = json.loads(
+            self.plan.run(*args, **kwargs, objective=objective, context=context).strip()
+        )
 
-    def _call(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
-        """Run the agent."""
-        objective = inputs["objective"]
-        iteration_count = 0
+        print_task_list(tasks_by_worker)
 
-        while iteration_count < self.max_iterations:
-            print_heading("SUPERVISOR PLANNING", color="cyan")
-            plan = self.plan.run(objective=objective)
-            tasks = deque(TaskRecord(**attrs) for attrs in json.loads(plan))
-            print_task_list(tasks)
+        task_records = []
+        workers = {}
 
-            workers = {
-                id: Worker.options(
-                    name=f"worker_{id}", namespace=objective, get_if_exists=True
-                ).remote(
-                    WorkerChain.from_llm(llm=self.llm, vectorstore=self.vectorstore)
+        for worker in tasks_by_worker:
+            task_records.extend((TaskRecord(**t) for t in worker["tasks"]))
+            workers[worker["actor_id"]] = Actor.remote(
+                agent=WorkerAgent(
+                    name=worker["name"],
+                    traits=worker["traits"],
+                    llm=self.worker_llm,
+                    memory=self.memory,
                 )
-                for id in set(t.actor_id for t in tasks)
-            }
+            )
 
-            task_refs = {}
-            for t in tasks:
-                task_refs[t.id] = workers[t.actor_id].call.remote(
-                    objective=objective,
-                    task=dict(t),
-                    dependencies=[task_refs[d.id] for d in t.dependencies],
-                )
+        tasks = {}
+        for t in task_records:
+            tasks[t.id] = workers[t.actor_id].call.remote(
+                objective=objective,
+                task=dict(t),
+                dependencies=[tasks[d.id] for d in t.dependencies],
+            )
 
-            results = ray.get(list(task_refs.values()))
-            print(results)
+        tasks_in_progress = list(tasks.values())
+        while any(tasks_in_progress):
+            tasks_completed, tasks_in_progress = ray.wait(
+                tasks_in_progress,
+                num_returns=min(self.reflect_every, len(tasks_in_progress)),
+            )
 
-            print_heading("SUPERVISOR REVIEW", color="cyan")
-            if "COMPLETE" in self.adjust.run(objective=objective, results=results):
-                return {"result": results}
+            for memory in ray.get(tasks_completed):
+                self._add_memory(memory)
 
+            self.pause_to_reflect()
 
-class Plan(LLMChain):
-    @classmethod
-    def from_llm(cls, llm: BaseChatModel, verbose: bool = True) -> LLMChain:
-        return cls(
-            llm=llm,
-            verbose=verbose,
-            prompt=PromptTemplate(
-                template_format="jinja2",
-                template=dedent(
-                    """\
-                    You are an expert planner that plans the next steps for a group of AI agents, as modeled by the actor model of concurrency.
-
-                    The overall objective is: {{ objective }}
-
-                    Decide the minimal set of new tasks for the agents to complete that do not overlap with the incomplete tasks. A single agent will perform tasks in the order they are given, but multiple agents can work on different tasks in parallel, waiting on results from other agents. Apply a topological sort to the tasks to ensure that the tasks are completed in the correct order. If a task is dependent on another task, it should probably be done by the same agent.
-
-                    Return the result as a JSON list in the following format:
-
-                    ```
-                    [
-                        {
-                            "actor_id": <actor id>,
-                            "task_id": <task id>,
-                            "description": <description>,
-                            "dependencies": [{
-                                "actor_id": <actor id>,
-                                "task_id": <task id>
-                            }]
-                        },
-                        ...
-                    ]
-                    ```
-
-                    If no additional tasks items are required to complete the objective, then don't return anything. Task IDs should be sequential for a given agent, and start at 1. Agents should be numbered sequentially, starting at 1. Return just the JSON array, starting with [ and ending with ].
-                    """
-                ),
-                input_variables=["objective"],
-            ),
-        )
-
-
-class Adjust(LLMChain):
-    @classmethod
-    def from_llm(cls, llm: BaseChatModel, verbose: bool = True) -> LLMChain:
-        return cls(
-            prompt=PromptTemplate(
-                template=dedent(
-                    """\
-                    You are an evaluation AI that adjusts the result of an AI supervisor against the objective: {objective}
-
-                    The results were: {results}
-
-                    If the result accomplishes the objective, return "COMPLETE". Otherwise, return "REDO".
-                    """
-                ),
-                input_variables=["objective", "results"],
-            ),
-            llm=llm,
-            verbose=verbose,
-        )
-
-
-SupervisorChain.update_forward_refs()
+        return self.get_summary()
