@@ -7,7 +7,6 @@ from langchain.agents import MRKLChain, Tool, ZeroShotAgent
 from langchain.chains import LLMMathChain
 from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
-from langchain.tools.human.tool import HumanInputRun
 from langchain.tools.wikipedia.tool import WikipediaQueryRun
 from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
 from langchain.utilities import (
@@ -115,6 +114,7 @@ class WorkerChain(Chain, BaseModel):
             metadatas=[dict(task)],
             ids=[f"result_{task.actor_id}_{task.id}"],
         )
+
         return result
 
     def _verify(self, objective: str, task: TaskRecord, result: str):
@@ -138,7 +138,6 @@ class Do(MRKLChain):
         tools = [
             WolframAlphaQueryRun(api_wrapper=WolframAlphaAPIWrapper()),
             WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper()),
-            # HumanInputRun(),
             Tool(
                 name="Calculator",
                 func=LLMMathChain(llm=llm).run,

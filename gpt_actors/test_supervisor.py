@@ -19,6 +19,7 @@ class TestSupervisor:
 
         cls.supervisor = Supervisor.remote(
             SupervisorChain.from_llm(
+                verbose=True,
                 llm=ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo"),
                 vectorstore=FAISS(
                     embedding_function=OpenAIEmbeddings().embed_query,
@@ -26,7 +27,6 @@ class TestSupervisor:
                     docstore=InMemoryDocstore({}),
                     index_to_docstore_id={},
                 ),
-                verbose=True,
             )
         )
 
@@ -38,7 +38,8 @@ class TestSupervisor:
         assert "588" in result
 
     def test_thinking(self):
-        ref = self.supervisor.call.remote(
-            objective="How can we ensure the safe development of AGI?",
+        ray.get(
+            self.supervisor.call.remote(
+                objective="How can we ensure the safe development of AGI?",
+            )
         )
-        result = ray.get(ref)

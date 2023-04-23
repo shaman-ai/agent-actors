@@ -2,6 +2,13 @@
 
 Welcome to agi-actors, a proof-of-concept Python project that demonstrates the possibilities of combining AGI concepts like BabyAGI and AutoGPT with the Plan-Do-Check-Adjust (PDCA) cycle, and the actor model of concurrency for managing large language models (LLMs). agi-actors aims to inspire the LLM community, emphasizing the untapped potential of the actor model of concurrency as applied to generative agents and encouraging further exploration and development.
 
+# TODO
+
+1. Adjust prompts for actor.py
+2. Fix and run tests
+3. Add more examples to showcase the power of these agi-actors
+4. Cache or pool workers to prevent the "WORKER STARTING" on every call
+
 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 405.12786865234375 261.60223388671875" width="1215.3836059570312" height="784.8067016601562">
   <!-- svg-source:excalidraw -->
   <defs>

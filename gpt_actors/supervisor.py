@@ -7,9 +7,11 @@ import ray
 from langchain import LLMChain, PromptTemplate
 from langchain.chains.base import Chain
 from langchain.chat_models.base import BaseChatModel
+from langchain.retrievers import TimeWeightedVectorStoreRetriever
 from langchain.vectorstores import VectorStore
 from pydantic import BaseModel, Field
 
+from gpt_actors.actor import Actor
 from gpt_actors.models import TaskRecord
 from gpt_actors.utilities.log import print_heading
 from gpt_actors.worker import Worker, WorkerChain
@@ -27,19 +29,19 @@ def print_task_list(ts: List[TaskRecord]):
 
 @ray.remote
 class Supervisor:
-    def __init__(self, chain: Chain):
-        self.chain = chain
+    chain: "SupervisorChain" = Field(init=False)
 
     def call(self, *args, **kwargs):
         return self.chain.run(*args, **kwargs)
 
 
-class SupervisorChain(Chain, BaseModel):
+class SupervisorChain(Actor, BaseModel):
     llm: BaseChatModel = Field(init=False)
     plan: "Plan" = Field(init=False)
-    review: "Review" = Field(init=False)
-    vectorstore: VectorStore = Field(init=False)
+    adjust: "Adjust" = Field(init=False)
     max_iterations: Optional[int] = Field(default=2)
+    memory_retriever: TimeWeightedVectorStoreRetriever = Field(init=False)
+    vectorstore: VectorStore = Field(init=False)
 
     class Config:
         arbitrary_types_allowed = True
@@ -55,7 +57,7 @@ class SupervisorChain(Chain, BaseModel):
         return cls(
             llm=llm,
             plan=Plan.from_llm(llm, verbose=verbose),
-            review=Review.from_llm(llm, verbose=verbose),
+            adjust=Adjust.from_llm(llm, verbose=verbose),
             vectorstore=vectorstore,
             **kwargs,
         )
@@ -100,7 +102,7 @@ class SupervisorChain(Chain, BaseModel):
             print(results)
 
             print_heading("SUPERVISOR REVIEW", color="cyan")
-            if "COMPLETE" in self.review.run(objective=objective, results=results):
+            if "COMPLETE" in self.adjust.run(objective=objective, results=results):
                 return {"result": results}
 
 
@@ -145,14 +147,14 @@ class Plan(LLMChain):
         )
 
 
-class Review(LLMChain):
+class Adjust(LLMChain):
     @classmethod
     def from_llm(cls, llm: BaseChatModel, verbose: bool = True) -> LLMChain:
         return cls(
             prompt=PromptTemplate(
                 template=dedent(
                     """\
-                    You are an evaluation AI that reviews the result of an AI supervisor against the objective: {objective}
+                    You are an evaluation AI that adjusts the result of an AI supervisor against the objective: {objective}
 
                     The results were: {results}
 
