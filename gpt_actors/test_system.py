@@ -8,14 +8,14 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.retrievers import TimeWeightedVectorStoreRetriever
 from langchain.vectorstores import FAISS
 
-from gpt_actors.actor import Actor
+from gpt_actors.agent import AgentActor
 from gpt_actors.supervisor import SupervisorAgent
 
 
 class TestSystem:
     llm: BaseChatModel
     memory: TimeWeightedVectorStoreRetriever
-    supervisor: Actor
+    supervisor: AgentActor
 
     @classmethod
     def setup_class(cls):
@@ -31,7 +31,7 @@ class TestSystem:
                 index_to_docstore_id={},
             )
         )
-        cls.supervisor = Actor.remote(
+        cls.supervisor = AgentActor.remote(
             agent=SupervisorAgent(
                 name="AI Agent Supervisor",
                 traits="expert at planning research tasks",
@@ -42,8 +42,12 @@ class TestSystem:
             )
         )
 
+    @classmethod
+    def teardown_class(cls):
+        ray.shutdown()
+
     def test_search_and_math(self):
-        ref = self.supervisor.call.remote(
+        ref = self.supervisor.run.remote(
             objective="What is Sergey Brin's age times 12?"
         )
         result = ray.get(ref)
@@ -51,7 +55,7 @@ class TestSystem:
 
     def test_thinking(self):
         ray.get(
-            self.supervisor.call.remote(
+            self.supervisor.run.remote(
                 objective="How can we ensure the safe development of AGI?",
             )
         )

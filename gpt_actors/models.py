@@ -4,12 +4,12 @@ from pydantic import BaseModel, Field
 
 
 class TaskRef(BaseModel):
-    actor_id: int = Field(...)
+    worker_id: int = Field(...)
     task_id: int = Field(...)
 
     @property
     def id(self) -> str:
-        return f"{self.actor_id}.{self.task_id}"
+        return f"{self.worker_id}.{self.task_id}"
 
 
 class TaskRecord(TaskRef):
@@ -24,3 +24,12 @@ class TaskRecord(TaskRef):
             else ""
         )
         return f"{fmt_task} {fmt_deps}"
+
+
+class AgentRecord(BaseModel):
+    worker_id: int
+    name: str
+    traits: List[str]
+
+    def __str__(self) -> str:
+        return f"[Worker {self.worker_id}] {self.name} ({self.traits})"

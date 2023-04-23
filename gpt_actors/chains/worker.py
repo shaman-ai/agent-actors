@@ -44,14 +44,14 @@ class Do(MRKLChain):
 
         prefix = dedent(
             """\
-            You are an AI who performs one task based on the following objective: {objective}
+            You are an AI who performs one task based on the following objective: {objective}. If you know the final answer, say: "Final Answer: (answer)".
 
-            Take into account these previously completed tasks: {context}
+            Take into account your history: {context}
             """
         )
         suffix = dedent(
             """\
-            Question: {task}
+            Question: {task_description}
 
             Scratchpad: {agent_scratchpad}
             """
@@ -62,7 +62,12 @@ class Do(MRKLChain):
             tools=tools,
             prefix=prefix,
             suffix=suffix,
-            input_variables=["objective", "task", "context", "agent_scratchpad"],
+            input_variables=[
+                "agent_scratchpad",
+                "context",
+                "objective",
+                "task_description",
+            ],
         )
 
         return cls(agent=agent, tools=tools, verbose=verbose)
@@ -78,6 +83,8 @@ class Check(LLMChain):
                 dedent(
                     """\
                     You are an evaluation AI that checks the result of an AI agent against the objective: {objective}
+
+                    Here is the relevant context: {context}
 
                     Review the results of the last completed task below and decide whether the task was accurately accomplishes the objective or the task.
 

@@ -19,9 +19,10 @@ class WorkerAgent(Agent):
             *args, **kwargs, do=Do.from_llm(llm), check=Check.from_llm(llm)
         )
 
-    def call(
+    def run(
         self, *, objective: str, task: Dict[str, Any], dependencies: List[ray.ObjectRef]
     ):
+        self.status = "running"
         context = self.get_summary()
         if any(dependencies):
             dependencies = ray.get(dependencies)
@@ -29,19 +30,27 @@ class WorkerAgent(Agent):
         iterations_count = 0
         next_task = TaskRecord(**task)
         while next_task and iterations_count < self.max_iterations:
-            result = self.do.run(objective=objective, task=task, context=context)
-            next_task = self._check_task_result(
-                objective=objective, task=task, result=result
+            result = self.do.run(
+                objective=objective,
+                task_description=next_task.description,
+                context=context,
+            )
+            next_task = self._generate_next_task(
+                objective=objective, task=next_task, result=result, context=context
             )
 
         self.add_memory(result)
+        self.status = "idle"
         return result
 
-    def _generate_next_task(self, objective: str, task: TaskRecord, result: str):
+    def _generate_next_task(
+        self, objective: str, task: TaskRecord, result: str, context: str
+    ):
         result = self.check.run(
+            context=context,
             objective=objective,
-            task=task.description,
             result=result,
+            task=task.description,
         ).strip()
 
         if result.startswith("Complete"):

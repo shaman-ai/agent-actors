@@ -3,6 +3,7 @@ from datetime import datetime
 from textwrap import dedent
 from typing import List, Optional, Tuple
 
+import ray
 from langchain import LLMChain
 from langchain.chat_models.base import BaseChatModel
 from langchain.prompts import PromptTemplate
@@ -17,6 +18,21 @@ from gpt_actors.chains.agent import (
     ObservedEntity,
     Summarize,
 )
+
+
+@ray.remote
+class AgentActor:
+    agent: "Agent"
+
+    def __init__(self, agent: "Agent"):
+        self.agent = agent
+
+    def run(self, *args, **kwargs):
+        return self.agent.run(*args, **kwargs)
+
+    def call(self, method_name, *args, **kwargs):
+        method = getattr(self.agent, method_name)
+        return method(*args, **kwargs)
 
 
 class Agent(BaseModel):
@@ -35,14 +51,15 @@ class Agent(BaseModel):
     max_tokens_limit: int = 1200
 
     # State
+    status: str = "idle"
     summary: str = ""
-    memories_since_last_refresh: int = 0
+    memories_since_last_reflection: int = 0
     last_refreshed: datetime = Field(default_factory=datetime.now)
 
     class Config:
         arbitrary_types_allowed = True
 
-    def call(self, *args, **kwargs):
+    def run(self, *args, **kwargs):
         raise NotImplementedError()
 
     def generate_reaction(self, observation: str) -> Tuple[bool, str]:
@@ -93,10 +110,15 @@ class Agent(BaseModel):
 
     def _add_memory(self, memory_content: str) -> List[str]:
         importance_score = self._score_memory_importance(memory_content)
-        self.memory_importance += importance_score
+        print(importance_score)
+
         document = Document(
             page_content=memory_content, metadata={"importance": importance_score}
         )
+
+        self.memories_since_last_reflection += 1
+        self.memory_importance += importance_score
+
         return self.memory.add_documents([document])
 
     def add_memory(self, memory_content: str) -> List[str]:
@@ -116,7 +138,7 @@ class Agent(BaseModel):
     def get_summary(self, force_refresh: bool = False) -> str:
         if (
             not self.summary
-            or self.memories_since_last_refresh >= self.refresh_every
+            or self.memories_since_last_reflection >= self.reflect_every - 1
             or force_refresh
         ):
             self.summary = self._compute_agent_summary()
@@ -130,6 +152,7 @@ class Agent(BaseModel):
         ).strip()
 
     def _compute_agent_summary(self):
+        self.memories_since_last_reflection = 0
         summarize_chain = Summarize.from_llm(llm=self.llm, verbose=self.verbose)
         relevant_memories = self.fetch_memories(f"{self.name}'s core characteristics")
         relevant_memories_str = "\n".join(
@@ -172,11 +195,11 @@ class Agent(BaseModel):
         return _parse_list(result)
 
     def pause_to_reflect(self):
-        if self.status == "Reflecting":
+        if self.status == "reflecting":
             return []
 
         old_status = self.status
-        self.status = "Reflecting"
+        self.status = "reflecting"
         insights = self._pause_to_reflect()
         self.status = old_status
         return insights

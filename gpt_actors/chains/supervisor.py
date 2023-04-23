@@ -14,26 +14,26 @@ class Plan(LLMChain):
                 template_format="jinja2",
                 template=dedent(
                     """\
-                    You are an expert planner that plans the next steps for a group of AI agents, as modeled by the actor model of concurrency.
+                    You are an expert planner that plans the next steps for a group of AI workers, as modeled by the actor model of concurrency.
 
                     The overall objective is: {{ objective }}
 
-                    Decide the minimal set of new tasks for the agents to complete that do not overlap with the incomplete tasks. A single agent will perform tasks in the order they are given, but multiple agents can work on different tasks in parallel, waiting on results from other agents. Apply a topological sort to the tasks to ensure that the tasks are completed in the correct order. If a task is dependent on another task, it should probably be done by the same agent.
+                    Decide the minimal set of new tasks for the workers to complete that do not overlap with the incomplete tasks. A single worker will perform tasks in the order they are given, but multiple workers can work on different tasks in parallel, waiting on results from other workers. Apply a topological sort to the tasks to ensure that the tasks are completed in the correct order. If a task is dependent on another task, it should probably be done by the same worker.
 
                     Return the result as a JSON list in the following format:
 
                     ```
                     [
                         {
-                            "actor_id": <actor id>,
-                            "name": <actor name>,
-                            "traits": <traits suitable for this agent to possess that would make it successful in its role>,
+                            "worker_id": <worker id>,
+                            "name": <worker name>,
+                            "traits": [<traits suitable for this worker to possess that would make it successful in its role>, ...],
                             "tasks": [
                                 {
                                     "task_id": <task id>,
                                     "description": <description>,
                                     "dependencies": [{
-                                        "actor_id": <actor id>,
+                                        "worker_id": <worker id>,
                                         "task_id": <task id>
                                     }]
                                 },
@@ -44,7 +44,7 @@ class Plan(LLMChain):
                     ]
                     ```
 
-                    If no additional tasks items are required to complete the objective, then don't return anything. Task IDs should be sequential for a given agent, and start at 1. Agents should be numbered sequentially, starting at 1. Return just the JSON array, starting with [ and ending with ].
+                    If no additional tasks items are required to complete the objective, then don't return anything. Task IDs should be sequential for a given worker, and start at 1. Agents should be numbered sequentially, starting at 1. Return just the JSON array, starting with [ and ending with ].
                     """
                 ),
                 input_variables=["objective"],

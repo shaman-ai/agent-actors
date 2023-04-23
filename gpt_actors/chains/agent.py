@@ -35,7 +35,7 @@ class Importance(LLMChain):
             prompt=PromptTemplate.from_template(
                 dedent(
                     """\
-                    On a scale of 1 to 10, where 1 is purely irerelevant and 10 is relevant to the objective "{objective}", rate the likely relevance of the following piece of memory. Respond with a single integer.
+                    On a scale of 1 to 10, where 1 is purely irrelevant and 10 is salient, rate the likely relevance of the following piece of memory. Respond with a single integer.
 
                     Memory: {memory_content}
                     Rating:
