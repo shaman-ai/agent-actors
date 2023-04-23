@@ -5,10 +5,10 @@ import ray
 from langchain.chat_models.base import BaseChatModel
 from pydantic import Field
 
-from gpt_actors.agent import Agent, AgentActor
-from gpt_actors.chains.supervisor import Adjust, Plan
-from gpt_actors.models import AgentRecord, TaskRecord
-from gpt_actors.worker import WorkerAgent
+from agent_actors.agent import Agent, AgentActor
+from agent_actors.chains.supervisor import Adjust, Plan
+from agent_actors.models import AgentRecord, TaskRecord
+from agent_actors.worker import WorkerAgent
 
 
 def print_task_list(tasks_by_worker: List[Dict[str, Any]]):

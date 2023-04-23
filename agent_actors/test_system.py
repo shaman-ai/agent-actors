@@ -8,8 +8,8 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.retrievers import TimeWeightedVectorStoreRetriever
 from langchain.vectorstores import FAISS
 
-from gpt_actors.agent import AgentActor
-from gpt_actors.supervisor import SupervisorAgent
+from agent_actors.agent import AgentActor
+from agent_actors.supervisor import SupervisorAgent
 
 
 class TestSystem:

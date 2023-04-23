@@ -3,9 +3,9 @@ from typing import Any, Dict, List, Optional
 import ray
 from pydantic import Field
 
-from gpt_actors.agent import Agent
-from gpt_actors.chains.worker import Check, Do
-from gpt_actors.models import TaskRecord
+from agent_actors.agent import Agent
+from agent_actors.chains.worker import Check, Do
+from agent_actors.models import TaskRecord
 
 
 class WorkerAgent(Agent):

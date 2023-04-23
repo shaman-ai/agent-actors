@@ -11,7 +11,7 @@ from langchain.retrievers import TimeWeightedVectorStoreRetriever
 from langchain.schema import Document
 from pydantic import BaseModel, Field
 
-from gpt_actors.chains.agent import (
+from agent_actors.chains.agent import (
     EntityAction,
     Importance,
     Insights,
