@@ -147,7 +147,7 @@ class Agent(BaseModel):
             f"""\
             Name: {self.name}
             Traits: {self.traits}
-            Summary: {self.summary}
+            Context: {self.summary}
             """
         ).strip()
 
@@ -190,7 +190,8 @@ class Agent(BaseModel):
         reflection_chain = Insights.from_llm(llm=self.llm, verbose=self.verbose)
         result = reflection_chain.run(
             topic=topic, related_statements=related_statements
-        )
+        ).strip()
+        print("Reflections ", result)
         # TODO: Parse the connections between memories and insights
         return _parse_list(result)
 

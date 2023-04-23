@@ -30,6 +30,7 @@ class WorkerAgent(Agent):
         iterations_count = 0
         next_task = TaskRecord(**task)
         while next_task and iterations_count < self.max_iterations:
+            print(f"Doing {next_task.description} with context {context}")
             result = self.do.run(
                 objective=objective,
                 task_description=next_task.description,

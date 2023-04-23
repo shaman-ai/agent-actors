@@ -46,14 +46,21 @@ class TestSystem:
     def teardown_class(cls):
         ray.shutdown()
 
-    def test_search_and_math(self):
+    def test_simple_search_and_math(self):
         ref = self.supervisor.run.remote(
             objective="What is Sergey Brin's age times 12?"
         )
         result = ray.get(ref)
         assert "588" in result
 
-    def test_thinking(self):
+    def test_research(self):
+        ray.get(
+            self.supervisor.run.remote(
+                objective="Who are the founders of OpenAI and what are their roles and ages?"
+            )
+        )
+
+    def test_research_and_thinking(self):
         ray.get(
             self.supervisor.run.remote(
                 objective="How can we ensure the safe development of AGI?",

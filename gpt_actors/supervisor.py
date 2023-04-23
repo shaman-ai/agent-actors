@@ -33,6 +33,7 @@ class SupervisorAgent(Agent):
     def run(self, *args, objective: str, **kwargs):
         self.status = "running"
         context = self.get_summary()
+        print("Context", context)
 
         tasks_by_worker = json.loads(
             self.plan.run(*args, **kwargs, objective=objective, context=context).strip()
