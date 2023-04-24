@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 
-from langchain import LLMChain
+from langchain import LLMChain, OpenAI
 from langchain.agents import Tool
 from langchain.chains import LLMMathChain
 from langchain.utilities import (
@@ -11,8 +11,13 @@ from langchain.utilities import (
 )
 
 
-def default_toolkit(llm: LLMChain) -> List[Tool]:
+def default_toolkit() -> List[Tool]:
     return [
+        Tool(
+            name="Generative LLM",
+            func=OpenAI(temperature=0.75).__call__,
+            description="A generative large-language-model, can be used to generate text in response to a prompt. Input should be a prompt.",
+        ),
         Tool(
             name="Wolfram Alpha",
             func=WolframAlphaAPIWrapper().run,

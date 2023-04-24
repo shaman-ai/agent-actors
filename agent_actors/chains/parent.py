@@ -31,7 +31,7 @@ class Plan(JSONChain):
                     ```
                     [
                         {
-                            "task_id": <incrementing int starting at 0 globally>,
+                            "task_id": <incrementing int starting at 0 per child>,
                             "child_id": <assigned team member id>,
                             "task": <task task>,
                             "dependencies": [{

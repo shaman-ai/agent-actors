@@ -30,12 +30,12 @@ class TestSystem:
         load_dotenv()
         cls.callback_manager = ConsolePrettyPrintManager([])
         cls.llm = ChatOpenAI(
-            temperature=0,
+            temperature=0.25,
             model_name="gpt-3.5-turbo",
             callback_manager=cls.callback_manager,
             max_tokens=1024,
         )
-        cls.tools = default_toolkit(cls.llm)
+        cls.tools = default_toolkit()
         cls.long_term_memory = TimeWeightedVectorStoreRetriever(
             vectorstore=FAISS(
                 embedding_function=OpenAIEmbeddings().embed_query,
@@ -99,7 +99,7 @@ class TestSystem:
         luke.children = {0: amir}
         luke.run(task="What is Sergey Brin's age multiplied by 12?")
 
-    def test_map_reduce(self):
+    def test_parallel_map_reduce(self):
         jiang = self.create_child(
             name="Jiang",
             traits=["sharp", "math, stats, and data whiz", "capitalist"],
@@ -108,48 +108,54 @@ class TestSystem:
             name="Sophia",
             traits=["deep thinker", "contrarian", "empathetic"],
         )
+        esther = self.create_child(
+            name="Esther",
+            traits=["great writer"],
+        )
+        jerry = self.create_child(
+            name="Jerry",
+            traits=["funny", "creative", "comedian", "executive assistant"],
+        )
         luke = self.create_parent(
             name="Luke",
             traits=["AI project manager", "golden retriever energy"],
             max_iterations=3,
-            children={0: jiang, 1: sophia},
+            children={0: jiang, 1: sophia, 2: esther, 42: jerry},
         )
         luke.run(
-            task="Write me a 1-page memo with recent research as well as commentary on the development of AGI"
+            task="I need an executive report on Artificial General Intelligence and a list of 5 relevant jokes and quotes."
         )
 
-    def test_supervision_tree(self):
-        ariel = self.create_child(
-            name="Ariel",
-            traits=[
-                "ai researcher",
-                "great writer",
-            ],
+    def test_nested_parent_tree(self):
+        jiang = self.create_child(
+            name="Jiang",
+            traits=["sharp", "math, stats, and data whiz", "capitalist"],
+        )
+        sophia = self.create_child(
+            name="Sophia",
+            traits=["deep thinker", "contrarian", "empathetic"],
+        )
+        esther = self.create_child(
+            name="Esther",
+            traits=["great writer"],
+        )
+        luke = self.create_parent(
+            name="Luke",
+            traits=["AI project manager", "golden retriever energy"],
             max_iterations=3,
+            children={0: jiang, 1: sophia, 2: esther},
         )
         amir = self.create_child(
             name="Amir",
-            traits=["ai researcher"],
-            max_iterations=3,
+            traits=["funny", "creative", "kind"],
         )
-        jaime = self.create_parent(
-            name="Jaime",
-            traits=["expert ai researcher"],
-            max_iterations=3,
-            children={0: ariel, 1: amir},
-        )
-        jerry = self.create_child(
-            name="Jerry",
-            traits=["executive assistant", "funny", "creative"],
-            max_iterations=3,
-        )
-        greg = self.create_parent(
-            "Greg",
-            traits=["kind human", "great leader"],
+        cyrus = self.create_parent(
+            "Cyrus",
+            traits=["kind human"],
             max_iterations=2,
-            children={0: jaime, 42: jerry},
+            children={0: luke, 42: amir},
         )
 
-        greg.run(
-            task="I need an executive report on the latest AI developments and a list of jokes to tell my wife when next week."
+        cyrus.run(
+            task="I need an executive report on Artificial General Intelligence and a list of 5 related jokes and quotes."
         )

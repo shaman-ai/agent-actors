@@ -28,8 +28,8 @@ class Agent(BaseModel):
     children: Dict[int, "Agent"] = Field(default_factory=dict)
 
     reflect_every: int = 10
-    reflect_importance_trigger: Optional[float] = float("inf")
-    cumulative_importance: float = 0.5
+    reflect_strength_trigger: Optional[float] = float("inf")
+    cumulative_strength: float = 0.5
 
     verbose: bool = False
     max_tokens_limit: int = 1200
@@ -126,29 +126,29 @@ class Agent(BaseModel):
     def is_time_to_reflect(self) -> bool:
         return (
             self.memories_since_last_reflection >= self.reflect_every - 1
-            or self.cumulative_importance > self.reflect_importance_trigger
+            or self.cumulative_strength > self.reflect_strength_trigger
         )
 
     def _add_memory(self, memory_content: str) -> List[str]:
         datum = "[[MEMORY]]\n" + memory_content
-        importance_score = self._score_cumulative_importance(datum)
+        strength_score = self._predict_memory_strength(datum)
 
         nodes = self.long_term_memory.add_documents(
-            [Document(page_content=datum, metadata={"importance": importance_score})]
+            [Document(page_content=datum, metadata={"strength": strength_score})]
         )
 
         if self.verbose:
             print(datum if len(datum) < 280 else datum[:280] + "...")
 
         self.memories_since_last_reflection += 1
-        self.cumulative_importance += importance_score
+        self.cumulative_strength += strength_score
 
         return nodes
 
     def add_memory(self, memory_content: str) -> List[str]:
         result = self._add_memory(memory_content)
         # After an agent has processed a certain amount of memories (as measured by
-        # aggregate importance), it is time to reflect on recent events to add
+        # aggregate strength), it is time to reflect on recent events to add
         # more synthesized memories to the agent's memory stream.
         if self.is_time_to_reflect():
             self.pause_to_reflect()
@@ -238,7 +238,7 @@ class Agent(BaseModel):
         old_status = self.status
         self.status = "reflecting"
         insights = self._pause_to_reflect()
-        self.cumulative_importance = 0.0
+        self.cumulative_strength = 0.0
         self.status = old_status
         return insights
 
@@ -250,15 +250,13 @@ class Agent(BaseModel):
         self.memories_since_last_reflection = 0
         return new_insights
 
-    def _score_cumulative_importance(
-        self, memory_content: str, weight: float = 0.8
-    ) -> float:
-        """Score the absolute importance of the given memory."""
+    def _predict_memory_strength(self, memory_content: str) -> float:
+        """Score the absolute strength of the given memory."""
         score = self.memory_strength.run(memory_content=memory_content).strip()
         match = re.search(r"^\D*(\d+)", score)
         if not match:
             return 0.0
-        return (float(score[0]) / 10) * weight
+        return float(score[0]) / 10
 
     def _format_memories_to_summarize(self, relevant_memories: List[Document]) -> str:
         content_strs = set()

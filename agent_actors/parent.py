@@ -1,7 +1,6 @@
-import json
 from collections import defaultdict
 from pprint import pprint
-from typing import Dict, List
+from typing import List
 
 import ray
 from langchain.schema import AgentAction, AgentFinish

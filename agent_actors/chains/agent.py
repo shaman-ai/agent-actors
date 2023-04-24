@@ -56,7 +56,7 @@ class MemoryStrength(LLMChain):
                     """\
                     On a scale of 1 to 10, where 1 is purely irrelevant and 10 is salient, rate the likely relevance of the following result to the task. Respond with a single integer.
 
-                    Memory: {memory_content}
+                    {memory_content}
                     Rating: \
                     """
                 )
