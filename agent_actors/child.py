@@ -1,15 +1,15 @@
 from pprint import pprint
 from textwrap import dedent
-from typing import Any, Dict, List
+from typing import List
 
 import ray
 from pydantic import Field
 
 from agent_actors.agent import Agent
-from agent_actors.chains.worker import Check, Do
+from agent_actors.chains.child import Check, Do
 
 
-class WorkerAgent(Agent):
+class ChildAgent(Agent):
     max_iterations: int = 3
     do: Do = Field(init=False)
     check: Check = Field(init=False)
@@ -28,34 +28,34 @@ class WorkerAgent(Agent):
             check=Check.from_llm(**chain_params),
         )
 
-    def run(self, objective: str, working_memory: List[ray.ObjectRef]):
+    def run(self, task: str, working_memory: List[ray.ObjectRef] = []):
         try:
             self.status = "running"
 
             for _ in range(self.max_iterations):
-                self.objective = objective
+                self.task = task
 
                 context = self.get_context()
                 if any(working_memory):
                     context += "\n" + "\n\n".join(ray.get(working_memory))
 
                 result = self.do(
-                    inputs=dict(context=context, objective=self.objective),
+                    inputs=dict(context=context, task=self.task),
                     return_only_outputs=True,
                 )
 
-                if result["intermediate_steps"]:
-                    print("=== INTERMEDIATE STEPS ===")
-                    pprint(result["intermediate_steps"])
+                for action, action_result in result["intermediate_steps"]:
+                    learning = f"Thought: {action.log}\n{action_result}"
+                    self.add_memory(learning)
 
-                learning = f"""[[MEMORY]]\nObjective: {self.objective}\nResult:\n{result["output"]}"""
+                learning = f"Task: {self.task}\nResult:\n{result['output']}"
                 self.add_memory(learning)
 
-                objective = self.check.run(context=context, learning=learning)
-                if "Complete" in objective:
+                task = self.check.run(context=context, learning=learning)
+                if "Complete" in task:
                     return learning
 
             return learning
         finally:
-            self.objective = ""
+            self.task = ""
             self.status = "idle"

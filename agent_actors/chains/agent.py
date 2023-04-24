@@ -6,7 +6,7 @@ from langchain import LLMChain, PromptTemplate
 from langchain.chat_models.base import BaseChatModel
 
 
-class ListChain(LLMChain):
+class NaturalLanguageListChain(LLMChain):
     output_key = "items"
 
     def _call(self, inputs: Dict[str, Any]) -> Dict[str, List[str]]:
@@ -18,7 +18,7 @@ class ListChain(LLMChain):
         return {"items": items}
 
 
-class WorkingMemory(ListChain):
+class WorkingMemory(NaturalLanguageListChain):
     @classmethod
     def from_llm(cls, llm: BaseChatModel, verbose: bool = True, **kwargs) -> LLMChain:
         return cls(
@@ -30,12 +30,12 @@ class WorkingMemory(ListChain):
                     """\
                     {context}
 
-                    You have been tasked with {objective}.
+                    You have been tasked with {task}.
 
                     Here is a list of your relevant memories:
                     {relevant_memories}
 
-                    Your task is to synthesize from these memories a list of insights and knowledge that will serve as your working memory for accomplishing the objective.
+                    Your task is to synthesize from these memories a list of 1 to 12 insights and knowledge that will serve as your working memory for accomplishing the task.
 
                     Working Memory: \
                     """
@@ -44,7 +44,7 @@ class WorkingMemory(ListChain):
         )
 
 
-class MemoryWeight(LLMChain):
+class MemoryStrength(LLMChain):
     @classmethod
     def from_llm(cls, llm: BaseChatModel, verbose: bool = True, **kwargs) -> LLMChain:
         return cls(
@@ -54,7 +54,7 @@ class MemoryWeight(LLMChain):
             prompt=PromptTemplate.from_template(
                 dedent(
                     """\
-                    On a scale of 1 to 10, where 1 is purely irrelevant and 10 is salient, rate the likely relevance of the following result to the objective. Respond with a single integer.
+                    On a scale of 1 to 10, where 1 is purely irrelevant and 10 is salient, rate the likely relevance of the following result to the task. Respond with a single integer.
 
                     Memory: {memory_content}
                     Rating: \
@@ -64,7 +64,7 @@ class MemoryWeight(LLMChain):
         )
 
 
-class Synthesis(ListChain):
+class Synthesis(NaturalLanguageListChain):
     @classmethod
     def from_llm(cls, llm: BaseChatModel, verbose: bool = True, **kwargs) -> LLMChain:
         return cls(
@@ -76,7 +76,7 @@ class Synthesis(ListChain):
                     """\
                     {context}
 
-                    You have been tasked with {objective}.
+                    You have been tasked with {task}.
 
                     Here is a list of your recent memories:
                     {memories}
@@ -88,7 +88,7 @@ class Synthesis(ListChain):
         )
 
 
-class GenerateInsights(ListChain):
+class GenerateInsights(NaturalLanguageListChain):
     @classmethod
     def from_llm(cls, llm: BaseChatModel, verbose: bool = True, **kwargs) -> LLMChain:
         return cls(

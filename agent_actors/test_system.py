@@ -1,190 +1,155 @@
-from datetime import datetime
-from pprint import pprint
-from typing import Any, Dict, List
+from typing import List
 
 import ray
 from dotenv import load_dotenv
 from faiss import IndexFlatL2
 from langchain.agents import Tool
-from langchain.callbacks import CallbackManager, StdOutCallbackHandler
-from langchain.callbacks.base import CallbackManager
-from langchain.chains import LLMMathChain
+from langchain.callbacks import BaseCallbackManager
 from langchain.chat_models import ChatOpenAI
+from langchain.chat_models.base import BaseChatModel
 from langchain.docstore import InMemoryDocstore
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.retrievers import TimeWeightedVectorStoreRetriever
-from langchain.utilities import (
-    GoogleSerperAPIWrapper,
-    WikipediaAPIWrapper,
-    WolframAlphaAPIWrapper,
-)
+from langchain.schema import BaseRetriever
 from langchain.vectorstores import FAISS
 
-from agent_actors.agent import Actor
-from agent_actors.supervisor import SupervisorAgent
-from agent_actors.worker import WorkerAgent
-
-
-class ConsolePrettyPrinter(StdOutCallbackHandler):
-    def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> None:
-        super().on_chain_end(outputs, **kwargs)
-        pprint(outputs)
-
-    def on_chain_start(
-        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
-    ) -> None:
-        super().on_chain_start(serialized, inputs, **kwargs)
-        pprint(inputs)
+from agent_actors.callback_manager import ConsolePrettyPrintManager
+from agent_actors.child import ChildAgent
+from agent_actors.parent import ParentAgent
+from agent_actors.toolkit import default_toolkit
 
 
 class TestSystem:
-    llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
-    long_term_memory = TimeWeightedVectorStoreRetriever(
-        vectorstore=FAISS(
-            embedding_function=OpenAIEmbeddings().embed_query,
-            index=IndexFlatL2(1536),
-            docstore=InMemoryDocstore({}),
-            index_to_docstore_id={},
-        )
-    )
-    callback_manager = CallbackManager(
-        handlers=[
-            # StreamlitCallbackHandler(),
-            ConsolePrettyPrinter(),
-        ]
-    )
-    tools: List[Tool]
-    supervisor_agent: SupervisorAgent
-    supervisor_actor: Actor
-
-    def test_single_lookup_and_math(self):
-        # One worker
-        self.supervisor_agent.set_workers(self.workers[:1])
-        self.supervisor_agent.run(objective="What is Sergey Brin's age times 12?")
-
-    def test_multi_lookup(self):
-        self.supervisor_agent.set_workers(self.workers)
-        self.supervisor_agent.run(
-            objective="Generate a markdown table of the top 5 most populous cities in the world, along with their population and GDP."
-        )
-
-    def test_critical_thinking(self):
-        self.supervisor_agent.set_workers(self.workers)
-        self.supervisor_agent.run(
-            objective="Develop a thorough plan to ensure the safe development of AGI.",
-        )
-
-    def test_strategic_thinking(self):
-        workers = [
-            WorkerAgent(
-                name="José Juarez",
-                traits=[
-                    "chief operating officer",
-                ],
-                llm=self.llm,
-                long_term_memory=self.long_term_memory,
-                tools=self.tools,
-                callback_manager=self.callback_manager,
-            ),
-            WorkerAgent(
-                name="Anastasia Rand",
-                traits=[
-                    "sales lead",
-                ],
-                llm=self.llm,
-                long_term_memory=self.long_term_memory,
-                tools=self.tools,
-                callback_manager=self.callback_manager,
-            ),
-            WorkerAgent(
-                name="Justina Jackson",
-                traits=[
-                    "digital marketer",
-                    "website developer",
-                ],
-                llm=self.llm,
-                long_term_memory=self.long_term_memory,
-                tools=self.tools,
-                callback_manager=self.callback_manager,
-            ),
-            WorkerAgent(
-                name="Jay Ferris",
-                traits=["creative", "strategist"],
-                llm=self.llm,
-                long_term_memory=self.long_term_memory,
-                tools=self.tools,
-                callback_manager=self.callback_manager,
-            ),
-        ]
-
-        self.supervisor_agent.set_workers(workers)
-        self.supervisor_agent.run(
-            objective="Develop a thorough go-to-market plan for a digital agency that provides marketing and web development services for climate fintech companies.",
-        )
+    llm: BaseChatModel
+    long_term_memory: BaseRetriever
+    callback_manager: BaseCallbackManager
+    tools: List[Tool] = []
 
     @classmethod
     def setup_class(cls):
         load_dotenv()
-        ray.init()
-
-        cls.tools = [
-            Tool(
-                name="Wolfram Alpha",
-                func=WolframAlphaAPIWrapper().run,
-                description="A wrapper around Wolfram Alpha. Useful for when you need to answer questions about Math or Science. Input should be a search query.",
-            ),
-            Tool(
-                name="Wikipedia",
-                func=WikipediaAPIWrapper().run,
-                description="A wrapper around Wikipedia that fetches page summaries. Useful when you need a summary of a person, place, company, historical event, or other subject. Input is typically a noun, like a person, place, company, historical event, or other subject.",
-            ),
-            Tool(
-                name="Calculator",
-                func=LLMMathChain(llm=cls.llm).run,
-                description="useful for when you need to do math. Input should be a math expression.",
-            ),
-            Tool(
-                name="Search",
-                func=GoogleSerperAPIWrapper().run,
-                description="useful for when you need to answer questions using up-to-date information from the internet. Input should be a search query.",
-            ),
-            Tool(
-                name="DateTime",
-                func=lambda _: datetime.utcnow().isoformat(),
-                description="Useful for when you want to know the current date and time. Input is ignored.",
-            ),
-        ]
-        cls.workers = [
-            WorkerAgent(
-                name="José Juarez",
-                traits=[
-                    "effective altruist",
-                ],
-                llm=cls.llm,
-                long_term_memory=cls.long_term_memory,
-                tools=cls.tools,
-                callback_manager=cls.callback_manager,
-            ),
-            WorkerAgent(
-                name="Anastasia Rand",
-                traits=[
-                    "individualist",
-                ],
-                llm=cls.llm,
-                long_term_memory=cls.long_term_memory,
-                tools=cls.tools,
-                callback_manager=cls.callback_manager,
-            ),
-        ]
-        cls.supervisor_agent = SupervisorAgent(
-            name="Alireza",
-            traits=["expert strategist"],
-            llm=cls.llm,
-            long_term_memory=cls.long_term_memory,
-            max_iterations=1,
+        cls.callback_manager = ConsolePrettyPrintManager([])
+        cls.llm = ChatOpenAI(
+            temperature=0,
+            model_name="gpt-3.5-turbo",
             callback_manager=cls.callback_manager,
+            max_tokens=1024,
         )
+        cls.tools = default_toolkit(cls.llm)
+        cls.long_term_memory = TimeWeightedVectorStoreRetriever(
+            vectorstore=FAISS(
+                embedding_function=OpenAIEmbeddings().embed_query,
+                index=IndexFlatL2(1536),
+                docstore=InMemoryDocstore({}),
+                index_to_docstore_id={},
+            )
+        )
+        ray.init()
 
     @classmethod
     def teardown_class(cls):
         ray.shutdown()
+
+    def create_child(
+        self, name: str, traits: List[str], max_iterations=3
+    ) -> ChildAgent:
+        return ChildAgent(
+            name=name,
+            traits=traits,
+            max_iterations=max_iterations,
+            llm=self.llm,
+            long_term_memory=self.long_term_memory,
+            tools=self.tools,
+            callback_manager=self.callback_manager,
+        )
+
+    def create_parent(
+        self, name: str, traits: List[str], max_iterations=1, **kwargs
+    ) -> ParentAgent:
+        return ParentAgent(
+            **kwargs,
+            name=name,
+            traits=traits,
+            max_iterations=max_iterations,
+            llm=self.llm,
+            # tools=self.tools,
+            long_term_memory=self.long_term_memory,
+            callback_manager=self.callback_manager,
+        )
+
+    def test_child_ability(self):
+        amir = self.create_child(
+            name="Amir",
+            traits=["smart", "kind"],
+            max_iterations=3,
+        )
+        amir.run(task="What is Sergey Brin's age multiplied by 12?")
+
+    def test_parent_overhead(self):
+        luke = self.create_parent(
+            name="Luke",
+            traits=["project manager", "golden retriever energy"],
+            max_iterations=3,
+        )
+        amir = self.create_child(
+            name="Amir",
+            traits=["smart", "kind"],
+            max_iterations=3,
+        )
+        luke.children = {0: amir}
+        luke.run(task="What is Sergey Brin's age multiplied by 12?")
+
+    def test_map_reduce(self):
+        jiang = self.create_child(
+            name="Jiang",
+            traits=["sharp", "math, stats, and data whiz", "capitalist"],
+        )
+        sophia = self.create_child(
+            name="Sophia",
+            traits=["deep thinker", "contrarian", "empathetic"],
+        )
+        luke = self.create_parent(
+            name="Luke",
+            traits=["AI project manager", "golden retriever energy"],
+            max_iterations=3,
+            children={0: jiang, 1: sophia},
+        )
+        luke.run(
+            task="Write me a 1-page memo with recent research as well as commentary on the development of AGI"
+        )
+
+    def test_supervision_tree(self):
+        ariel = self.create_child(
+            name="Ariel",
+            traits=[
+                "ai researcher",
+                "great writer",
+            ],
+            max_iterations=3,
+        )
+        amir = self.create_child(
+            name="Amir",
+            traits=["ai researcher"],
+            max_iterations=3,
+        )
+        jaime = self.create_parent(
+            name="Jaime",
+            traits=["expert ai researcher"],
+            max_iterations=3,
+            children={0: ariel, 1: amir},
+        )
+        jerry = self.create_child(
+            name="Jerry",
+            traits=["executive assistant", "funny", "creative"],
+            max_iterations=3,
+        )
+        greg = self.create_parent(
+            "Greg",
+            traits=["kind human", "great leader"],
+            max_iterations=2,
+            children={0: jaime, 42: jerry},
+        )
+
+        greg.run(
+            task="I need an executive report on the latest AI developments and a list of jokes to tell my wife when next week."
+        )

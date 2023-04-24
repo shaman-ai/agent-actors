@@ -14,7 +14,7 @@ Welcome to agent-actors, a proof-of-concept Python project that demonstrates the
 
 ![agent-actors flow](./diagram.png)
 
-1. A copilot submits an objective to a **Supervisor**, along with a set of worker agents. The supervisor which makes a **Plan** and distributes the tasks to its worker agents.
+1. A copilot submits an task to a **Supervisor**, along with a set of worker agents. The supervisor which makes a **Plan** and distributes the tasks to its worker agents.
 2. **Workers** use the ReAct framework to **Do** a task with an added **Check** to improve their work if required.
 3. **Supervisor** reviews the results of tasks in the **Adjust** phase and decides whether to loop back to planning or to terminate.
 

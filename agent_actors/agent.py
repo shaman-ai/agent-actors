@@ -1,37 +1,22 @@
 import re
 from datetime import datetime
 from textwrap import dedent
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import ray
-import streamlit as st
 from langchain import LLMChain
 from langchain.agents import Tool
 from langchain.chat_models.base import BaseChatModel
 from langchain.schema import BaseRetriever, Document
 from pydantic import BaseModel, Field
 
+from agent_actors.agent_actor import AgentActor
 from agent_actors.chains.agent import (
     GenerateInsights,
-    MemoryWeight,
+    MemoryStrength,
     Synthesis,
     WorkingMemory,
 )
-
-
-@ray.remote
-class Actor:
-    agent: "Agent"
-
-    def __init__(self, agent: "Agent"):
-        self.agent = agent
-
-    def run(self, *args, **kwargs):
-        return self.agent.run(*args, **kwargs)
-
-    def call(self, method_name, *args, **kwargs):
-        method = getattr(self.agent, method_name)
-        return method(*args, **kwargs)
 
 
 class Agent(BaseModel):
@@ -39,7 +24,8 @@ class Agent(BaseModel):
     name: str
     traits: List[str] = Field(default_factory=list)
     tools: List[Tool] = Field(default_factory=list)
-    objective: str = Field(default="")
+    task: str = Field(default="")
+    children: Dict[int, "Agent"] = Field(default_factory=dict)
 
     reflect_every: int = 10
     reflect_importance_trigger: Optional[float] = float("inf")
@@ -60,7 +46,8 @@ class Agent(BaseModel):
     working_memory: LLMChain = Field(init=False)
     synthesis: LLMChain = Field(init=False)
     insights_generator: LLMChain = Field(init=False)
-    memory_weight: LLMChain = Field(init=False)
+    memory_strength: LLMChain = Field(init=False)
+    actor: ray.ObjectRef = None
 
     class Config:
         arbitrary_types_allowed = True
@@ -77,8 +64,18 @@ class Agent(BaseModel):
             working_memory=WorkingMemory.from_llm(**chain_params),
             synthesis=Synthesis.from_llm(**chain_params),
             insights_generator=GenerateInsights.from_llm(**chain_params),
-            memory_weight=MemoryWeight.from_llm(**chain_params),
+            memory_strength=MemoryStrength.from_llm(**chain_params),
         )
+        self.actor = AgentActor.remote(self)
+
+    def set_children(self, children: Dict[int, "Agent"]):
+        self.children = children
+
+    def add_child(self, child_agent: "Agent"):
+        self.children[len(self.children)] = child_agent
+
+    def remove_child(self, agent_id: int):
+        return self.children.pop(agent_id)
 
     def generate_reaction(self, observation: str) -> Tuple[bool, str]:
         """React to a given observation."""
@@ -133,16 +130,20 @@ class Agent(BaseModel):
         )
 
     def _add_memory(self, memory_content: str) -> List[str]:
-        importance_score = self._score_cumulative_importance(memory_content)
+        datum = "[[MEMORY]]\n" + memory_content
+        importance_score = self._score_cumulative_importance(datum)
 
-        document = Document(
-            page_content=memory_content, metadata={"importance": importance_score}
+        nodes = self.long_term_memory.add_documents(
+            [Document(page_content=datum, metadata={"importance": importance_score})]
         )
+
+        if self.verbose:
+            print(datum if len(datum) < 280 else datum[:280] + "...")
 
         self.memories_since_last_reflection += 1
         self.cumulative_importance += importance_score
 
-        return self.long_term_memory.add_documents([document])
+        return nodes
 
     def add_memory(self, memory_content: str) -> List[str]:
         result = self._add_memory(memory_content)
@@ -158,7 +159,7 @@ class Agent(BaseModel):
             f"""\
             Name: {self.name}
             Traits: {", ".join(self.traits)}
-            Objective: {self.objective}
+            Task: {self.task}
             """
         )
 
@@ -167,13 +168,13 @@ class Agent(BaseModel):
         if not context or force_refresh or self.is_time_to_reflect():
             context = self._compute_agent_working_memory()
 
-        return f"{self.get_header()}Working Memory:\n{context}"
+        return f"{self.get_header()}Working Memory:\n{context}\n"
 
     def _compute_agent_working_memory(self):
-        if not self.objective:
+        if not self.task:
             return "[Empty]"
 
-        relevant_memories = self.fetch_memories(self.objective)
+        relevant_memories = self.fetch_memories(self.task)
         if not any(relevant_memories):
             return "[Empty]"
 
@@ -181,7 +182,7 @@ class Agent(BaseModel):
             self.working_memory(
                 inputs=dict(
                     context=self.get_header(),
-                    objective=self.objective,
+                    task=self.task,
                     relevant_memories="\n".join(
                         f"{m.page_content}" for m in relevant_memories
                     ),
@@ -205,7 +206,7 @@ class Agent(BaseModel):
 
         return self.synthesis(
             context=self.get_header(),
-            objective=self.objective,
+            task=self.task,
             memories="\n".join(o.page_content for o in observations),
         )["items"]
 
@@ -253,7 +254,7 @@ class Agent(BaseModel):
         self, memory_content: str, weight: float = 0.8
     ) -> float:
         """Score the absolute importance of the given memory."""
-        score = self.memory_weight.run(memory_content=memory_content).strip()
+        score = self.memory_strength.run(memory_content=memory_content).strip()
         match = re.search(r"^\D*(\d+)", score)
         if not match:
             return 0.0
