@@ -2,7 +2,7 @@
 
 Welcome to agent-actors, a proof-of-concept Python project that demonstrates the possibilities of combining AGI proof-of-concepts like BabyAgent and AutoGPT with the Plan-Do-Check-Adjust (PDCA) cycle, as well as the actor model of concurrency for managing large language models (LLMs). agent-actors aims to inspire the LLM community, emphasizing the untapped potential of the actor model of concurrency as applied to generative agents and encouraging further exploration and development.
 
-[![youtube demo]](https://youtu.be/XiHiOfYOAmc)
+[![Demo](https://img.youtube.com/vi/XiHiOfYOAmc/0.jpg)](https://www.youtube.com/watch?v=XiHiOfYOAmc)
 
 ## Key Features
 
