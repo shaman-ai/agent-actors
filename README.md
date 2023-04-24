@@ -4,19 +4,19 @@ Welcome to agent-actors, a proof-of-concept Python project that demonstrates the
 
 [![asciicast](https://asciinema.org/a/R54NGynvBPeCXFlgBIBaYZ1cD.svg)](https://asciinema.org/a/R54NGynvBPeCXFlgBIBaYZ1cD)
 
+## Key Features
+
+* **Plan-Do-Check-Adjust (PDCA) Cycle**: The supervisory agent does, allowing for continuous improvement and optimization of the work distribution and execution process among worker agents.
+* **Actor Model of Concurrency**: agent-actors implements the actor model, where a supervisor agent has worker agents that complete sub-tasks in parallel independently.
+* **Agent Working Memory**: Agents have their own local working memory synthesized from a global memory store to inject into their prompts as context. Agents also score the relevance of their new memories (a la Generative Agents: Interactive Simulacra of Human Behavior)
+
 ## How it works
 
 ![agent-actors flow](./diagram.png)
 
-1. A **Plan** is made by a **Supervisor** for a given objective, and a semantic zero-shot topological sort is performed on the plan's tasks to adequately distribute tasks across workers.
-2. **Workers** use the ReAct framework to **Do** a task and then **Check** it, improving their work if required.
+1. A copilot submits an objective to a **Supervisor**, along with a set of worker agents. The supervisor which makes a **Plan** and distributes the tasks to its worker agents.
+2. **Workers** use the ReAct framework to **Do** a task with an added **Check** to improve their work if required.
 3. **Supervisor** reviews the results of tasks in the **Adjust** phase and decides whether to loop back to planning or to terminate.
-
-## Key Features
-
-* **Plan-Do-Check-Adjust (PDCA) Cycle**: The supervisory agent does, allowing for continuous improvement and optimization of the work distribution and execution process among worker agents.
-
-* **Actor Model of Concurrency**: agent-actors implements the actor model, where a supervisor agent has worker agents that complete sub-tasks in parallel independently.
 
 ## Limitations
 
