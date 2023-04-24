@@ -6,7 +6,7 @@ Welcome to agent-actors, a proof-of-concept Python project that demonstrates the
 
 ## Key Features
 
-* **Plan-Do-Check-Adjust (PDCA) Cycle**: The supervisory agent does, allowing for continuous improvement and optimization of the work distribution and execution process among worker agents.
+* **Plan-Do-Check-Adjust (PDCA) Cycle**: The supervisory agent does, allowing for continuous improvement and optimization of the work distribution and execution process among worker agents. This is an iteration on the decision models of other AutoGPT implementations.
 * **Actor Model of Concurrency**: agent-actors implements the actor model, where a supervisor agent has worker agents that complete sub-tasks in parallel independently.
 * **Agent Working Memory**: Agents have their own local working memory synthesized from a global memory store to inject into their prompts as context. Agents also score the relevance of their new memories (a la Generative Agents: Interactive Simulacra of Human Behavior)
 
