@@ -1,3 +1,4 @@
+from pprint import pprint
 from textwrap import dedent
 from typing import Any, Dict, List
 
@@ -39,16 +40,15 @@ class WorkerAgent(Agent):
                     context += "\n" + "\n\n".join(ray.get(working_memory))
 
                 result = self.do(
-                    inputs=dict(
-                        context=context,
-                        objective=self.objective,
-                    ),
+                    inputs=dict(context=context, objective=self.objective),
                     return_only_outputs=True,
-                )["output"]
-
-                learning = (
-                    f"""[[RESULT]]\nObjective: {self.objective}\nResult:\n{result}"""
                 )
+
+                if result["intermediate_steps"]:
+                    print("=== INTERMEDIATE STEPS ===")
+                    pprint(result["intermediate_steps"])
+
+                learning = f"""[[MEMORY]]\nObjective: {self.objective}\nResult:\n{result["output"]}"""
                 self.add_memory(learning)
 
                 objective = self.check.run(context=context, learning=learning)

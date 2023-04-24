@@ -24,7 +24,7 @@ class Plan(LLMChain):
                     This is your team:
                     {{ worker_summary }}
 
-                    Decide and assign the a set of new tasks for your workers to complete that do not overlap with the incomplete tasks. The same task should not be assigned to multiple workers. Workers can have multiple tasks assigned to them. Do not assign tasks to workers that don't exist. Task dependencies must refer to existing tasks. Task IDs should be unique across all tasks and start at 0. When referencing other tasks, use the format [worker #.task #]. Return just the JSON array, in the following format, starting with [ and ending with ].
+                    Decide and assign the minimal set of new tasks required for your workers to complete that do not overlap with the incomplete tasks. The same task should not be assigned to multiple workers. Workers can have multiple tasks assigned to them. Do not assign tasks to workers that don't exist. Task dependencies must refer to existing tasks. Task IDs should be unique across all tasks and start at 0. When referencing other tasks, use the format [worker #.task #]. Return just the JSON array, in the following format, starting with [ and ending with ].
 
                     ```
                     [
