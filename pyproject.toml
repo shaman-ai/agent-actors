@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "gpt-actors"
+name = "agent-actors"
 version = "0.1.0"
-description = "An auto-GPT that observes and remembers"
+description = "a proof-of-concept inspired by BabyAGI, the Plan-Do-Check-Adjust (PDCA) cycle, and the actor model of concurrency"
 authors = ["Cyrus Nouroozi"]
 license = "BUSL-1.1"
 readme = "README.md"
-packages = [{ include = "gpt_actors" }]
+packages = [{ include = "agent_actors" }]
 
 [tool.ruff]
 line-length = -1
@@ -22,8 +22,7 @@ wikipedia = "^1.4.0"
 tiktoken = "^0.3.3"
 gptcache = "^0.1.17"
 termcolor = "^2.2.0"
-ray = {extras = ["default"], version = "^2.3.1"}
-pytest = "^7.3.1"
+ray = { extras = ["default"], version = "^2.3.1" }
 
 [tool.poetry.group.typing]
 optional = true
@@ -43,8 +42,9 @@ ipdb = "^0.13.13"
 faiss-cpu = "^1.7.3"
 black = "^23.3.0"
 ipython = "^8.12.0"
-pytest = "^7.3.0"
 ruff = "^0.0.261"
+streamlit = "^1.21.0"
+pytest = "^7.3.1"
 
 [build-system]
 requires = ["poetry-core"]

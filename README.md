@@ -1,10 +1,10 @@
-# agi-actors: The Potential of AGI with Plan-Do-Check-Adjust and the Actor Model of Concurrency
+# agent-actors: The Potential of AGI with Plan-Do-Check-Adjust and the Actor Model of Concurrency
 
-Welcome to agi-actors, a proof-of-concept Python project that demonstrates the possibilities of combining AGI concepts like BabyAGI and AutoGPT with the Plan-Do-Check-Adjust (PDCA) cycle, and the actor model of concurrency for managing large language models (LLMs). agi-actors aims to inspire the LLM community, emphasizing the untapped potential of the actor model of concurrency as applied to generative agents and encouraging further exploration and development.
+Welcome to agent-actors, a proof-of-concept Python project that demonstrates the possibilities of combining AGI concepts like BabyAGI and AutoGPT with the Plan-Do-Check-Adjust (PDCA) cycle, and the actor model of concurrency for managing large language models (LLMs). agent-actors aims to inspire the LLM community, emphasizing the untapped potential of the actor model of concurrency as applied to generative agents and encouraging further exploration and development.
 
 ## How it works
 
-![agi-actors flow](./diagram.svg)
+![agent-actors flow](./diagram.png)
 
 1. A **Plan** is made by a **Supervisor** for a given objective, and a semantic zero-shot topological sort is performed on the plan's tasks to adequately distribute tasks across workers.
 2. **Workers** use the ReAct framework to **Do** a task and then **Check** it, improving their work if required.
@@ -32,7 +32,7 @@ Welcome to agi-actors, a proof-of-concept Python project that demonstrates the p
 
 * **Plan-Do-Check-Adjust (PDCA) Cycle**: The supervisory agent does, allowing for continuous improvement and optimization of the work distribution and execution process among worker agents.
 
-* **Actor Model of Concurrency**: agi-actors implements the actor model, where a supervisor agent has worker agents that complete sub-tasks in parallel independently.
+* **Actor Model of Concurrency**: agent-actors implements the actor model, where a supervisor agent has worker agents that complete sub-tasks in parallel independently.
 
 ## Limitations
 
@@ -40,7 +40,7 @@ This was only tested on GPT-3.5-Turbo, and not GPT-4, because we don't have an A
 
 ## Request for Contributors
 
-We invite contributors to join us in expanding agi-actors by exploring the following ideas:
+We invite contributors to join us in expanding agent-actors by exploring the following ideas:
 
 1. **Improved Agent Prompts**: Develop better prompts for the Plan, Do, Check, and Adjust chains
 2. **Implement Agent Memory**: Using
@@ -49,7 +49,7 @@ We invite contributors to join us in expanding agi-actors by exploring the follo
 
 ## Acknowledgments
 
-We extend our gratitude to the two Python packages, langchain and ray, which have significantly contributed to the development of agi-actors.
+We extend our gratitude to the two Python packages, langchain and ray, which have significantly contributed to the development of agent-actors.
 
 Together, let's explore the potential of AGI Actors and inspire the LLM community to delve deeper into this exciting area of research.
 
@@ -85,10 +85,10 @@ Please cite the repo if you use the data or code in this repo.
 ```
 @misc{agiactors,
   author = {Cyrus Nouroozi},
-  title = {agi-actors: The Potential of AGI with Plan-Do-Check-Adjust and the Actor Model of Concurrency},
+  title = {agent-actors: The Potential of AGI with Plan-Do-Check-Adjust and the Actor Model of Concurrency},
   year = {2023},
   publisher = {GitHub},
   journal = {GitHub repository},
-  howpublished = {\url{https://github.com/shaman-ai/agi-actors}},
+  howpublished = {\url{https://github.com/shaman-ai/agent-actors}},
 }
 ```
