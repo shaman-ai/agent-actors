@@ -20,14 +20,14 @@ Welcome to agent-actors, a proof-of-concept Python project that demonstrates the
 
 ## Limitations
 
-This was only tested on GPT-3.5-Turbo, and not GPT-4, because we don't have an API token.
+This was only tested on GPT-3.5-Turbo, and not GPT-4. We encourage experimentation here .
 
 ## Request for Contributors
 
 We invite contributors to join us in expanding agent-actors by exploring the following ideas:
 
 1. **Improved Agent Prompts**: Develop better prompts for the Plan, Do, Check, and Adjust chains
-2. **Visualization TOoling**: Develop an interface for exploring the execution tree of Agent Actors, allowing researchers to better understand and visualize the interaction between the supervisory agent and worker agents.
+2. **Visualization Tooling**: Develop an interface for exploring the execution tree of Agent Actors, allowing researchers to better understand and visualize the interaction between the supervisory agent and worker agents.
 3. **Nested Supervisors**: Experiment with having nested supervision trees
 
 ## Acknowledgments
@@ -67,7 +67,7 @@ Please cite the repo if you use the data or code in this repo.
 
 ```
 @misc{agiactors,
-  author = {Cyrus Nouroozi},
+  author = {Shaman AI},
   title = {agent-actors: The Potential of Agent with Plan-Do-Check-Adjust and the Actor Model of Concurrency},
   year = {2023},
   publisher = {GitHub},
