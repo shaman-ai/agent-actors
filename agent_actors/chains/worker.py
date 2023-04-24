@@ -1,72 +1,48 @@
 from textwrap import dedent
+from typing import List
 
-import ray
 from langchain import LLMChain, PromptTemplate
 from langchain.agents import MRKLChain, Tool, ZeroShotAgent
-from langchain.chains import LLMMathChain
 from langchain.chat_models.base import BaseChatModel
-from langchain.tools.wikipedia.tool import WikipediaQueryRun
-from langchain.tools.wolfram_alpha.tool import WolframAlphaQueryRun
-from langchain.utilities import (
-    GoogleSerperAPIWrapper,
-    WikipediaAPIWrapper,
-    WolframAlphaAPIWrapper,
-)
 
 
-class Do(MRKLChain):
+class TaskAgent(MRKLChain):
     @classmethod
-    def from_llm(cls, llm: BaseChatModel, verbose: bool = True) -> LLMChain:
-        tools = [
-            WolframAlphaQueryRun(api_wrapper=WolframAlphaAPIWrapper()),
-            WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper()),
-            Tool(
-                name="Calculator",
-                func=LLMMathChain(llm=llm).run,
-                description="useful for when you need to do math. Input should be a math expression.",
-            ),
-            Tool(
-                name="Search",
-                func=GoogleSerperAPIWrapper().run,
-                description="useful for when you need to answer questions using up-to-date information from the internet. Input should be a search query.",
-            ),
-            Tool(
-                name="TODO",
-                func=LLMChain(
-                    llm=llm,
-                    prompt=PromptTemplate.from_template(
-                        "You are a data-driven planner who is an expert at coming up with a todo list for a given objective. Come up with the minimal todo list to complete the objective: {objective}."
-                    ),
-                ).run,
-                description="useful for when you need to come up with todo lists. Input: an objective to create a todo list for. Output: a todo list for that objective. Please be very clear what the objective is!",
-            ),
-        ]
-
-        prefix = dedent(
-            """\
-            You are an AI who performs one task based on the following objective: {objective}. If you know the final answer, say: "Final Answer: (answer)".
-
-            Take into account your history: {context}
-            """
-        )
-        suffix = dedent(
-            """\
-            Question: {task_description}
-
-            Scratchpad: {agent_scratchpad}
-            """
-        )
-
+    def from_llm(
+        cls, llm: BaseChatModel, tools: List[Tool], verbose: bool = True
+    ) -> LLMChain:
         agent = ZeroShotAgent.from_llm_and_tools(
             llm=llm,
             tools=tools,
-            prefix=prefix,
-            suffix=suffix,
+            prefix="Complete the task below. You have access to the following tools:",
+            format_instructions=dedent(
+                """\
+                Use the following format:
+
+                Objective: the input task you must complete
+                Thought: you should always think about what to do
+                Reasoning: the reasoning behind your thought
+                Action: the action to take, should be one of [{tool_names}]
+                Action Input: the input to the action
+                Observation: the result of the action
+                Reflection: constructive self-criticism
+                ... (this Thought/Reasoning/Action/Action Input/Observation/Reflection can repeat N times)
+                Thought: The task has been completed appropriately and accurately
+                Final Answer: the final result of this task
+            """
+            ),
+            suffix=dedent(
+                """\
+                {context}
+
+                Objective: {objective}
+                Thought: {agent_scratchpad}\
+                """
+            ),
             input_variables=[
-                "agent_scratchpad",
                 "context",
                 "objective",
-                "task_description",
+                "agent_scratchpad",
             ],
         )
 

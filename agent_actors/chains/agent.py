@@ -4,7 +4,7 @@ from langchain import LLMChain, PromptTemplate
 from langchain.chat_models.base import BaseChatModel
 
 
-class Summarize(LLMChain):
+class WorkingMemory(LLMChain):
     @classmethod
     def from_llm(cls, llm: BaseChatModel, verbose: bool = True) -> LLMChain:
         return cls(
@@ -13,20 +13,23 @@ class Summarize(LLMChain):
             prompt=PromptTemplate.from_template(
                 dedent(
                     """\
-                    How would you summarize the following history:
+                    {context}
 
-                    {related_memories}
+                    You have been tasked with {objective}.
 
-                    Do not embellish.
+                    Here is a list of your relevant memories:
+                    {relevant_memories}
 
-                    Summary:
+                    Your task synthesize from these memories a list of insights and knowledge that will serve as your working memory for accomplishing the objective.
+
+                    Working Memory: \
                     """
                 )
             ),
         )
 
 
-class Importance(LLMChain):
+class PrioritizeMemory(LLMChain):
     @classmethod
     def from_llm(cls, llm: BaseChatModel, verbose: bool = True) -> LLMChain:
         return cls(
@@ -35,17 +38,40 @@ class Importance(LLMChain):
             prompt=PromptTemplate.from_template(
                 dedent(
                     """\
-                    On a scale of 1 to 10, where 1 is purely irrelevant and 10 is salient, rate the likely relevance of the following piece of memory. Respond with a single integer.
+                    On a scale of 1 to 10, where 1 is purely irrelevant and 10 is salient, rate the likely relevance of the following piece of memory to the objective "{objective}". Respond with a single integer.
 
                     Memory: {memory_content}
-                    Rating:
+                    Rating: \
                     """
                 )
             ),
         )
 
 
-class Insights(LLMChain):
+class ReflectionTopics(LLMChain):
+    @classmethod
+    def from_llm(cls, llm: BaseChatModel, verbose: bool = True) -> LLMChain:
+        return cls(
+            llm=llm,
+            verbose=verbose,
+            prompt=PromptTemplate.from_template(
+                dedent(
+                    """\
+                    {context}
+
+                    You have been tasked with {objective}.
+
+                    Here is a list of your recent memories:
+                    {memories}
+
+                    Given only the memories above, generate 3 questions to ask to synthesize new knowledge or create insights. Provide each question on a new line.
+                    """
+                )
+            ),
+        )
+
+
+class GenerateInsights(LLMChain):
     @classmethod
     def from_llm(cls, llm: BaseChatModel, verbose: bool = False):
         return cls(
@@ -54,31 +80,17 @@ class Insights(LLMChain):
             prompt=PromptTemplate.from_template(
                 dedent(
                     """\
-                    Statements about {topic}:
+                    {context}
+
+                    You are to generate insights about {topic}.
+
+                    Here are the relevant memories:
                     {related_statements}
 
-                    What are 5 high-level insights we can infer from the above statements? Provide each insight on a new line. (example format: insight (because of 1, 5, 3))
+                    What are 3 high-level insights we can infer from the above statements? Provide each insight on a new line.
+
+                    Format in the following format: <insight> [statement #, ...]
                     """
                 )
             ),
         )
-
-
-class ObservedEntity(LLMChain):
-    @classmethod
-    def from_llm(cls, llm: BaseChatModel, verbose: bool = False):
-        prompt = PromptTemplate.from_template(
-            "What is the observed entity in the following observation? {observation}"
-            + "\nEntity="
-        )
-        return cls(llm=llm, prompt=prompt, verbose=verbose)
-
-
-class EntityAction(LLMChain):
-    @classmethod
-    def from_llm(cls, llm: BaseChatModel, verbose: bool = False):
-        prompt = PromptTemplate.from_template(
-            "What is the {entity} doing in the following observation? {observation}"
-            + "\nThe {entity} is"
-        )
-        return cls(llm=llm, prompt=prompt, verbose=verbose)

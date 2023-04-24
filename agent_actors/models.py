@@ -13,23 +13,14 @@ class TaskRef(BaseModel):
 
 
 class TaskRecord(TaskRef):
-    description: str = Field(...)
+    objective: str = Field(...)
     dependencies: List[TaskRef] = Field(default_factory=list)
 
     def __str__(self) -> str:
-        fmt_task = f"[{self.id}] {self.description}"
+        fmt_task = f"[{self.id}] {self.objective}"
         fmt_deps = (
             f"""(depends on {', '.join(f"[{d.id}]" for d in self.dependencies)})"""
             if any(self.dependencies)
             else ""
         )
         return f"{fmt_task} {fmt_deps}"
-
-
-class AgentRecord(BaseModel):
-    worker_id: int
-    name: str
-    traits: List[str]
-
-    def __str__(self) -> str:
-        return f"[Worker {self.worker_id}] {self.name} ({self.traits})"

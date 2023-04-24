@@ -1,62 +1,51 @@
-from typing import Any, Dict, List, Optional
+from textwrap import dedent
+from typing import Any, Dict, List
 
 import ray
 from pydantic import Field
 
 from agent_actors.agent import Agent
-from agent_actors.chains.worker import Check, Do
+from agent_actors.chains.worker import TaskAgent
 from agent_actors.models import TaskRecord
 
 
 class WorkerAgent(Agent):
-    max_iterations: Optional[int] = Field(default=2)
-    do: Do = Field(init=False)
-    check: Check = Field(init=False)
+    task_agent: TaskAgent = Field(init=False)
 
     def __init__(self, *args, **kwargs):
-        llm = kwargs["llm"]
         super().__init__(
-            *args, **kwargs, do=Do.from_llm(llm), check=Check.from_llm(llm)
+            *args,
+            **kwargs,
+            task_agent=TaskAgent.from_llm(
+                llm=kwargs["llm"],
+                tools=kwargs.get("tools", []),
+                verbose=kwargs.get("verbose", False),
+            ),
         )
 
-    def run(
-        self, *, objective: str, task: Dict[str, Any], dependencies: List[ray.ObjectRef]
-    ):
-        self.status = "running"
-        context = self.get_summary()
-        if any(dependencies):
-            dependencies = ray.get(dependencies)
+    def run(self, objective: str, working_memory: List[ray.ObjectRef]):
+        try:
+            self.status = "running"
+            self.objective = objective
 
-        iterations_count = 0
-        next_task = TaskRecord(**task)
-        while next_task and iterations_count < self.max_iterations:
-            print(f"Doing {next_task.description} with context {context}")
-            result = self.do.run(
-                objective=objective,
-                task_description=next_task.description,
+            context = self.get_context()
+            if any(working_memory):
+                context += "\n" + "\n".join(ray.get(working_memory))
+
+            result = self.task_agent.run(
                 context=context,
-            )
-            next_task = self._generate_next_task(
-                objective=objective, task=next_task, result=result, context=context
+                objective=self.objective,
             )
 
-        self.add_memory(result)
-        self.status = "idle"
-        return result
+            learning = dedent(
+                f"""\
+                Objective Description: {self.objective}
+                Objective Result: {result}
+                """
+            )
+            self.add_memory(learning)
 
-    def _generate_next_task(
-        self, objective: str, task: TaskRecord, result: str, context: str
-    ):
-        result = self.check.run(
-            context=context,
-            objective=objective,
-            result=result,
-            task=task.description,
-        ).strip()
-
-        if result.startswith("Complete"):
-            print("Objective complete!")
-        elif result.startswith("Next"):
-            print("Task complete!")
-        else:
-            return TaskRecord(**task, description=result)
+            return learning
+        finally:
+            self.objective = ""
+            self.status = "idle"

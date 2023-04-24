@@ -14,40 +14,38 @@ class Plan(LLMChain):
                 template_format="jinja2",
                 template=dedent(
                     """\
-                    You are an expert planner that plans the next steps for a group of AI workers, as modeled by the actor model of concurrency.
+                    {{ context }}
 
-                    The overall objective is: {{ objective }}
+                    Your objective is: {{ objective }}
 
-                    Decide the minimal set of new tasks for the workers to complete that do not overlap with the incomplete tasks. A single worker will perform tasks in the order they are given, but multiple workers can work on different tasks in parallel, waiting on results from other workers. Apply a topological sort to the tasks to ensure that the tasks are completed in the correct order. If a task is dependent on another task, it should probably be done by the same worker.
+                    This is your team:
+                    {{ worker_summary }}
 
-                    Return the result as a JSON list in the following format:
+                    Decide the minimal set of new tasks for your workers to complete that do not overlap with the incomplete tasks.
 
                     ```
                     [
                         {
+                            "task_id": <task id>,
                             "worker_id": <worker id>,
-                            "name": <worker name>,
-                            "traits": [<traits suitable for this worker to possess that would make it successful in its role>, ...],
-                            "tasks": [
-                                {
-                                    "task_id": <task id>,
-                                    "description": <description>,
-                                    "dependencies": [{
-                                        "worker_id": <worker id>,
-                                        "task_id": <task id>
-                                    }]
-                                },
-                                ...
-                            ]
-                        }
+                            "objective": <task objective>,
+                            "dependencies": [{
+                                "worker_id": <worker id>,
+                                "task_id": <task id>
+                            }]
+                        },
                         ...
                     ]
                     ```
 
-                    If no additional tasks items are required to complete the objective, then don't return anything. Task IDs should be sequential for a given worker, and start at 1. Agents should be numbered sequentially, starting at 1. Return just the JSON array, starting with [ and ending with ].
+                    If no additional tasks items are required to complete the objective, then don't return anything. Task IDs should be unique across all tasks and start at 1. Return just the JSON array, starting with [ and ending with ].
                     """
                 ),
-                input_variables=["objective"],
+                input_variables=[
+                    "context",
+                    "objective",
+                    "worker_summary",
+                ],
             ),
         )
 
@@ -61,11 +59,22 @@ class Adjust(LLMChain):
             prompt=PromptTemplate.from_template(
                 dedent(
                     """\
-                    You are an evaluation AI that adjusts the result of an AI supervisor against the objective: {objective}
+                    {context}
 
-                    The results were: {results}
+                    You are an continuous-improvement AI that reviews tasks completed by agents and decides what to do next.
 
-                    If the result accomplishes the objective, return "COMPLETE". Otherwise, return "REDO".
+                    The objective of these tasks was: {objective}
+
+                    The results were:
+                    {results}
+
+                    Imagine your confidence of having reasonably fulfilled the objective as a number between 1 and 10.
+
+                    Based on these results, if your confidence is greater than 7, then return:
+
+                    Complete: <summary of results>
+
+                    Otherwise, propose a better objective.
                     """
                 ),
             ),

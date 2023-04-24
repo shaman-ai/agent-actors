@@ -1,27 +1,29 @@
 import re
 from datetime import datetime
 from textwrap import dedent
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import ray
-from langchain import LLMChain
+from langchain.agents import Tool
 from langchain.chat_models.base import BaseChatModel
-from langchain.prompts import PromptTemplate
 from langchain.retrievers import TimeWeightedVectorStoreRetriever
 from langchain.schema import Document
 from pydantic import BaseModel, Field
 
-from agent_actors.chains.agent import (
-    EntityAction,
-    Importance,
-    Insights,
-    ObservedEntity,
-    Summarize,
-)
+from agent_actors.chains.agent import (GenerateInsights, PrioritizeMemory,
+                                       ReflectionTopics, WorkingMemory)
+
+
+def _parse_list(text: str) -> List[str]:
+    """Parse a newline-separated string into a list of strings."""
+    return [
+        re.sub(r"^\s*\d+\.\s*", "", line).strip()
+        for line in re.split(r"\n", text.strip())
+    ]
 
 
 @ray.remote
-class AgentActor:
+class Actor:
     agent: "Agent"
 
     def __init__(self, agent: "Agent"):
@@ -38,29 +40,28 @@ class AgentActor:
 class Agent(BaseModel):
     # Configuration
     name: str
-    traits: str
+    traits: List[str] = Field(default_factory=list)
+    tools: List[Tool] = Field(default_factory=list)
+    objective: str = Field(default="")
 
     llm: BaseChatModel = Field(init=False)
     memory: TimeWeightedVectorStoreRetriever = Field(init=False)
 
     reflect_every: int = 3
-    reflection_threshold: Optional[float] = None
-    memory_importance: float = 0.0
+    reflect_importance_trigger: Optional[float] = float("inf")
+    cumulative_importance: float = 0.5
 
     verbose: bool = False
     max_tokens_limit: int = 1200
 
     # State
     status: str = "idle"
-    summary: str = ""
+    working_memory: str = ""
     memories_since_last_reflection: int = 0
     last_refreshed: datetime = Field(default_factory=datetime.now)
 
     class Config:
         arbitrary_types_allowed = True
-
-    def run(self, *args, **kwargs):
-        raise NotImplementedError()
 
     def generate_reaction(self, observation: str) -> Tuple[bool, str]:
         """React to a given observation."""
@@ -108,8 +109,14 @@ class Agent(BaseModel):
     def fetch_memories(self, observation: str) -> List[Document]:
         return self.memory.get_relevant_documents(observation)
 
+    def is_time_to_reflect(self) -> bool:
+        return (
+            self.memories_since_last_reflection >= self.reflect_every - 1
+            or self.cumulative_importance > self.reflect_importance_trigger
+        )
+
     def _add_memory(self, memory_content: str) -> List[str]:
-        importance_score = self._score_memory_importance(memory_content)
+        importance_score = self._score_cumulative_importance(memory_content)
         print(importance_score)
 
         document = Document(
@@ -117,7 +124,7 @@ class Agent(BaseModel):
         )
 
         self.memories_since_last_reflection += 1
-        self.memory_importance += importance_score
+        self.cumulative_importance += importance_score
 
         return self.memory.add_documents([document])
 
@@ -126,74 +133,84 @@ class Agent(BaseModel):
         # After an agent has processed a certain amount of memories (as measured by
         # aggregate importance), it is time to reflect on recent events to add
         # more synthesized memories to the agent's memory stream.
-        if (
-            self.reflection_threshold is not None
-            and self.memory_importance > self.reflection_threshold
-        ):
+        if self.is_time_to_reflect():
             self.pause_to_reflect()
-            # Hack to clear the importance from reflection
-            self.memory_importance = 0.0
+            self.memories_since_last_reflection = 0
+            self.cumulative_importance = 0.0
         return result
 
-    def get_summary(self, force_refresh: bool = False) -> str:
-        if (
-            not self.summary
-            or self.memories_since_last_reflection >= self.reflect_every - 1
-            or force_refresh
-        ):
-            self.summary = self._compute_agent_summary()
-            self.last_refreshed = datetime.utcnow()
+    def get_header(self):
         return dedent(
             f"""\
             Name: {self.name}
-            Traits: {self.traits}
-            Context: {self.summary}
+            Traits: {", ".join(self.traits)}
+            Objective: {self.objective}
             """
-        ).strip()
-
-    def _compute_agent_summary(self):
-        self.memories_since_last_reflection = 0
-        summarize_chain = Summarize.from_llm(llm=self.llm, verbose=self.verbose)
-        relevant_memories = self.fetch_memories(f"{self.name}'s core characteristics")
-        relevant_memories_str = "\n".join(
-            [f"{mem.page_content}" for mem in relevant_memories]
         )
-        return summarize_chain.run(
-            name=self.name, related_memories=relevant_memories_str
-        ).strip()
 
-    def _get_topics_of_reflection(self, last_k: int = 50) -> Tuple[str, str, str]:
-        prompt = PromptTemplate.from_template(
-            dedent(
-                """\
-                {observations}
+    def get_context(self, force_refresh: bool = False) -> str:
+        if not self.working_memory or force_refresh or self.is_time_to_reflect():
+            self._compute_agent_working_memory()
 
-                Given only the information above, what are the 3 most salient high-level questions we can answer about the subjects in the statements? Provide each question on a new line.
+        return f"{self.get_header()}Working Memory:\n{self.working_memory}"
 
-                """
+    def _compute_agent_working_memory(self):
+        relevant_memories = self.fetch_memories(
+            f"{self.name}'s memories about {self.objective}"
+        )
+        if not any(relevant_memories):
+            self.working_memory = "Nothing"
+        else:
+            working_memory_chain = WorkingMemory.from_llm(
+                llm=self.llm, verbose=self.verbose
             )
-        )
-        reflection_chain = LLMChain(llm=self.llm, prompt=prompt, verbose=self.verbose)
+
+            self.working_memory = working_memory_chain.run(
+                context=self.get_header(),
+                objective={self.objective},
+                relevant_memories="\n".join(
+                    f"{m.page_content}" for m in relevant_memories
+                ),
+            ).strip()
+
+        self.last_refreshed = datetime.utcnow()
+        self.memories_since_last_reflection = 0
+
+        return self.working_memory
+
+    def _get_topics_of_reflection(
+        self, last_k: Optional[int] = None
+    ) -> Tuple[str, str, str]:
+        if last_k is None:
+            last_k = self.reflect_every
         observations = self.memory.memory_stream[-last_k:]
-        observation_str = "\n".join([o.page_content for o in observations])
-        result = reflection_chain.run(observations=observation_str)
-        return _parse_list(result)
+        reflection_topics_chain = ReflectionTopics(llm=self.llm, verbose=self.verbose)
+        return _parse_list(
+            reflection_topics_chain.run(
+                context=self.get_header(),
+                objective=self.objective,
+                memories="\n".join(o.page_content for o in observations),
+            ).strip()
+        )
 
     def _get_insights_on_topic(self, topic: str) -> List[str]:
         related_memories = self.fetch_memories(topic)
-        related_statements = "\n".join(
-            [
-                f"{i+1}. {memory.page_content}"
-                for i, memory in enumerate(related_memories)
-            ]
+        if not any(related_memories):
+            return []
+
+        generate_insights_chain = GenerateInsights.from_llm(
+            llm=self.llm, verbose=self.verbose
         )
-        reflection_chain = Insights.from_llm(llm=self.llm, verbose=self.verbose)
-        result = reflection_chain.run(
-            topic=topic, related_statements=related_statements
-        ).strip()
-        print("Reflections ", result)
-        # TODO: Parse the connections between memories and insights
-        return _parse_list(result)
+        return _parse_list(
+            generate_insights_chain.run(
+                context=self.get_header(),
+                topic=topic,
+                related_statements="\n".join(
+                    f"{i+1}. {memory.page_content}"
+                    for i, memory in enumerate(related_memories)
+                ),
+            ).strip()
+        )
 
     def pause_to_reflect(self):
         if self.status == "reflecting":
@@ -212,38 +229,26 @@ class Agent(BaseModel):
         for topic in topics:
             insights = self._get_insights_on_topic(topic)
             for insight in insights:
-                self.add_memory(insight)
+                self._add_memory(insight)
             new_insights.extend(insights)
+        self.memories_since_last_reflection += len(new_insights)
+        if self.memories_since_last_reflection >= self.reflect_every - 1:
+            self._pause_to_reflect()
         return new_insights
 
-    def _score_memory_importance(
+    def _score_cumulative_importance(
         self, memory_content: str, weight: float = 0.15
     ) -> float:
         """Score the absolute importance of the given memory."""
-        # A weight of 0.25 makes this less important than it
-        # would be otherwise, relative to salience and time
-        importance_chain = Importance.from_llm(llm=self.llm, verbose=self.verbose)
-        score = importance_chain.run(memory_content=memory_content).strip()
+        score = (
+            PrioritizeMemory.from_llm(llm=self.llm, verbose=self.verbose)
+            .run(memory_content=memory_content, objective=self.objective)
+            .strip()
+        )
         match = re.search(r"^\D*(\d+)", score)
         if not match:
             return 0.0
         return (float(score[0]) / 10) * weight
-
-    def get_full_header(self, force_refresh: bool = False) -> str:
-        """Return a full header of the agent's status, summary, and current time."""
-        summary = self.get_summary(force_refresh=force_refresh)
-        current_time_str = datetime.now().strftime("%B %d, %Y, %I:%M %p")
-        return (
-            f"{summary}\nIt is {current_time_str}.\n{self.name}'s status: {self.status}"
-        )
-
-    def _get_entity_from_observation(self, observation: str) -> str:
-        chain = ObservedEntity.from_llm(llm=self.llm, verbose=self.verbose)
-        return chain.run(observation=observation).strip()
-
-    def _get_entity_action(self, observation: str, entity_name: str) -> str:
-        chain = EntityAction.from_llm(llm=self.llm, verbose=self.verbose)
-        return chain.run(observation=observation, entity_name=entity_name).strip()
 
     def _format_memories_to_summarize(self, relevant_memories: List[Document]) -> str:
         content_strs = set()
@@ -257,25 +262,6 @@ class Agent(BaseModel):
                 content.append(f"- {created_time}: {mem.page_content.strip()}")
         return "\n".join([f"{mem}" for mem in content])
 
-    def summarize_related_memories(self, observation: str) -> str:
-        """Summarize memories that are most relevant to an observation."""
-        entity_name = self._get_entity_from_observation(observation)
-        entity_action = self._get_entity_action(observation, entity_name)
-        q1 = f"What is the relationship between {self.name} and {entity_name}"
-        relevant_memories = self.fetch_memories(
-            q1
-        )  # Fetch memories related to the agent's relationship with the entity
-        q2 = f"{entity_name} is {entity_action}"
-        relevant_memories += self.fetch_memories(
-            q2
-        )  # Fetch things related to the entity-action pair
-        context_str = self._format_memories_to_summarize(relevant_memories)
-        prompt = PromptTemplate.from_template(
-            "{q1}?\nContext from memory:\n{context_str}\nRelevant context: "
-        )
-        chain = LLMChain(llm=self.llm, prompt=prompt, verbose=self.verbose)
-        return chain.run(q1=q1, context_str=context_str.strip()).strip()
-
     def _get_memories_until_limit(self, consumed_tokens: int) -> str:
         """Reduce the number of tokens in the documents."""
         result = []
@@ -286,11 +272,3 @@ class Agent(BaseModel):
             if consumed_tokens < self.max_tokens_limit:
                 result.append(doc.page_content)
         return "; ".join(result[::-1])
-
-
-def _parse_list(text: str) -> List[str]:
-    """Parse a newline-separated string into a list of strings."""
-    return [
-        re.sub(r"^\s*\d+\.\s*", "", line).strip()
-        for line in re.split(r"\n", text.strip())
-    ]
