@@ -5,45 +5,55 @@ import ray
 from pydantic import Field
 
 from agent_actors.agent import Agent
-from agent_actors.chains.worker import TaskAgent
-from agent_actors.models import TaskRecord
+from agent_actors.chains.worker import Check, Do
 
 
 class WorkerAgent(Agent):
-    task_agent: TaskAgent = Field(init=False)
+    max_iterations: int = 3
+    do: Do = Field(init=False)
+    check: Check = Field(init=False)
 
     def __init__(self, *args, **kwargs):
+        chain_params = dict(
+            llm=kwargs["llm"],
+            verbose=kwargs.get("verbose", False),
+            callback_manager=kwargs.get("callback_manager", None),
+        )
+
         super().__init__(
             *args,
             **kwargs,
-            task_agent=TaskAgent.from_llm(
-                llm=kwargs["llm"],
-                tools=kwargs.get("tools", []),
-                verbose=kwargs.get("verbose", False),
-            ),
+            do=Do.from_llm(**chain_params, tools=kwargs["tools"]),
+            check=Check.from_llm(**chain_params),
         )
 
     def run(self, objective: str, working_memory: List[ray.ObjectRef]):
         try:
             self.status = "running"
-            self.objective = objective
 
-            context = self.get_context()
-            if any(working_memory):
-                context += "\n" + "\n".join(ray.get(working_memory))
+            for _ in range(self.max_iterations):
+                self.objective = objective
 
-            result = self.task_agent.run(
-                context=context,
-                objective=self.objective,
-            )
+                context = self.get_context()
+                if any(working_memory):
+                    context += "\n" + "\n".join(ray.get(working_memory))
 
-            learning = dedent(
-                f"""\
-                Objective Description: {self.objective}
-                Objective Result: {result}
-                """
-            )
-            self.add_memory(learning)
+                result = self.do(
+                    inputs=dict(
+                        context=context,
+                        objective=self.objective,
+                    ),
+                    return_only_outputs=True,
+                )["output"]
+
+                learning = (
+                    f"""[[RESULT]]\nObjective: {self.objective}\nResult: {result}"""
+                )
+                self.add_memory(learning)
+
+                objective = self.check.run(context=context, learning=learning)
+                if "Complete" in objective:
+                    return learning
 
             return learning
         finally:

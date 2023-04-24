@@ -1,32 +1,39 @@
 from textwrap import dedent
 from typing import List
 
-from langchain import LLMChain, PromptTemplate
-from langchain.agents import MRKLChain, Tool, ZeroShotAgent
+from langchain import LLMChain, MRKLChain, PromptTemplate
+from langchain.agents import Tool, ZeroShotAgent
 from langchain.chat_models.base import BaseChatModel
 
 
-class TaskAgent(MRKLChain):
+class TaskAgent(ZeroShotAgent):
     @classmethod
-    def from_llm(
-        cls, llm: BaseChatModel, tools: List[Tool], verbose: bool = True
+    def from_llm_and_tools(
+        cls,
+        llm: BaseChatModel,
+        tools: List[Tool],
+        verbose: bool = False,
+        **kwargs,
     ) -> LLMChain:
-        agent = ZeroShotAgent.from_llm_and_tools(
+        return super().from_llm_and_tools(
+            **kwargs,
             llm=llm,
             tools=tools,
+            verbose=verbose,
             prefix="Complete the task below. You have access to the following tools:",
             format_instructions=dedent(
                 """\
                 Use the following format:
 
-                Objective: the input task you must complete
+                Objective: the input objective you must complete
+                Tasks: A list of subtasks that will accomplish the objective
                 Thought: you should always think about what to do
                 Reasoning: the reasoning behind your thought
-                Action: the action to take, should be one of [{tool_names}]
+                Action: the action to take, should be only one of [{tool_names}]
                 Action Input: the input to the action
                 Observation: the result of the action
-                Reflection: constructive self-criticism
-                ... (this Thought/Reasoning/Action/Action Input/Observation/Reflection can repeat N times)
+                [[CYCLE COMPLETE]]
+                ... (this "Thought" to [[CYCLE COMPLETE]] cycle can repeat N times)
                 Thought: The task has been completed appropriately and accurately
                 Final Answer: the final result of this task
             """
@@ -36,7 +43,7 @@ class TaskAgent(MRKLChain):
                 {context}
 
                 Objective: {objective}
-                Thought: {agent_scratchpad}\
+                Tasks: {agent_scratchpad}\
                 """
             ),
             input_variables=[
@@ -46,30 +53,52 @@ class TaskAgent(MRKLChain):
             ],
         )
 
-        return cls(agent=agent, tools=tools, verbose=verbose)
+    @property
+    def _stop(self) -> List[str]:
+        return [
+            f"\n[[CYCLE COMPLETE]]",
+            f"\n\t[[CYCLE COMPLETE]]",
+        ]
+
+
+class Do(MRKLChain):
+    max_iterations = 3
+    early_stopping_method = "generate"
+    return_intermediate_steps = True
+
+    @classmethod
+    def from_llm(
+        cls, llm: BaseChatModel, tools: List[Tool], verbose: bool = True, **kwargs
+    ) -> LLMChain:
+        agent = TaskAgent.from_llm_and_tools(
+            **kwargs,
+            llm=llm,
+            tools=tools,
+            verbose=verbose,
+        )
+        return cls.from_agent_and_tools(
+            agent, tools, callback_manager=kwargs.get("callback_manager", None)
+        )
 
 
 class Check(LLMChain):
     @classmethod
-    def from_llm(cls, llm: BaseChatModel, verbose: bool = True) -> LLMChain:
+    def from_llm(cls, **kwargs) -> LLMChain:
         return cls(
-            llm=llm,
-            verbose=verbose,
+            **kwargs,
             prompt=PromptTemplate.from_template(
                 dedent(
                     """\
-                    You are an evaluation AI that checks the result of an AI agent against the objective: {objective}
+                    You are evaluating the result of an AI agent against its objective to verify its accurate compmletion.
 
                     Here is the relevant context: {context}
 
-                    Review the results of the last completed task below and decide whether the task was accurately accomplishes the objective or the task.
+                    Here is the result: {learning}
 
-                    The task was: {task}
-                    The result was: {result}
+                    If the result accomplishes its objective, return "Complete".
+                    Otherwise, return just a new objective for the agent to complete.
 
-                    If the result accomplishes the objective, return "Complete".
-                    If the result accomplishes the task, return "Next".
-                    Otherwise, return just the description of a task that will produce the expected result, with no preamble.
+                    Do not embellish.
                     """
                 ),
             ),
