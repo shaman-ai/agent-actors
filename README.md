@@ -56,7 +56,7 @@ pipenv install git+https://github.com/shaman-ai/agent-actors.git#egg=agent-actor
 ## Learn Agent Actors in 5 minutes
 
 ```python
-from agent_actors.actors import (
+from agent_actors import (
   Agent, # subclass and replace with your own `run` method
   ChildAgent, # Do and Check
   ParentAgent, # Plan and Adjust
