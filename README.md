@@ -1,65 +1,84 @@
-# agent-actors: The Potential of AGI with Plan-Do-Check-Adjust and the Actor Model of Concurrency
+# agent-actors: Parallel LLM Agent Execution Trees
 
-Welcome to agent-actors, a proof-of-concept Python project that demonstrates the possibilities of combining AGI proof-of-concepts like BabyAgent and AutoGPT with the Plan-Do-Check-Adjust (PDCA) cycle, as well as the actor model of concurrency for managing large language models (LLMs). agent-actors aims to inspire the LLM community, emphasizing the untapped potential of the actor model of concurrency as applied to generative agents and encouraging further exploration and development.
+Create your own trees of AI agents that work towards a common objective.
 
-## Demo Video
+Together, let's explore the potential of Agent Actors and inspire the LLM community to delve deeper into this exciting realm of possibilities!
+
+
+### You should check out the demo video to get a full sense of what this means:
+
 [![Demo](https://img.youtube.com/vi/XiHiOfYOAmc/0.jpg)](https://www.youtube.com/watch?v=XiHiOfYOAmc)
 
 ## Key Features
 
-* **Plan-Do-Check-Adjust (PDCA) Cycle**: The supervisory agent does, allowing for continuous improvement and optimization of the work distribution and execution process among worker agents. This is an iteration on the decision models of other AutoGPT implementations.
-* **Actor Model of Concurrency**: agent-actors implements the actor model, where a supervisor agent has worker agents that complete sub-tasks in parallel independently.
-* **Agent Working Memory**: Agents have their own local working memory synthesized from a global memory store to inject into their prompts as context. Agents also score the relevance of their new memories (a la Generative Agents: Interactive Simulacra of Human Behavior)
-
-## How it works
+* **Synthesized Working Memory**: An agent draws insights from and synthesizes their relevant memories into a "working memory" of 1–12 items for use with zero-shot prompts.
+* Implements the **Plan-Do-Check-Adjust (PDCA)** operational framework for continuous improvement.
+* It is modelled as an **LLM Parallel Map Reduce**: `ParentAgent(PlanChain) => parallel_map(ChildAgent(DoAgent(ReActChain, CheckChain))) => ParentAgent(AdjustChain)**`
+* **Use in your own projects** by composing `ParentAgent` and `ChildAgent`s into your own agent trees (see how easy it is in [`test_system.py`](./agent_actors/test_system.py)). Use your own vector store, retriever, or embedding function to our `ParentAgent` and `ChildAgent` classes.
 
 ![agent-actors flow](./diagram.png)
 
-1. A copilot submits an task to a **Supervisor**, along with a set of worker agents. The supervisor which makes a **Plan** and distributes the tasks to its worker agents.
-2. **Workers** use the ReAct framework to **Do** a task with an added **Check** to improve their work if required.
-3. **Supervisor** reviews the results of tasks in the **Adjust** phase and decides whether to loop back to planning or to terminate.
-
 ## Limitations
 
-This was only tested on GPT-3.5-Turbo, and not GPT-4. We encourage experimentation here .
+1. Proof of Concept, not production ready
+2. We've only tested used GPT3.5
 
-## Request for Contributors
+## What will you build?
+
+1. Your own research and reporting teams of agents
+2. Simulation-driven organizational behaviour research
+3. Create a developer *team* of AutoGPTs that work for you together
+4. New kinds of programmatic Agents, say, an EmailAgent that sends an email to a person, waits for them to reply, and uses that reply as its response. Then, you can have GPT4 plan your company's next steps, distribute tasks to AI agents and real humans (using EmailAgents), and then synthesize the result and recommend next steps.
+
+## Requests for Pull Requests
 
 We invite contributors to join us in expanding agent-actors by exploring the following ideas:
 
 1. **Improved Agent Prompts**: Develop better prompts for the Plan, Do, Check, and Adjust chains
-2. **Visualization Tooling**: Develop an interface for exploring the execution tree of Agent Actors, allowing researchers to better understand and visualize the interaction between the supervisory agent and worker agents.
-3. **Nested Supervisors**: Experiment with having nested supervision trees
+2. **Visualization Tooling**: Develop an interface for exploring first, then composing, an execution tree of Agent Actors, allowing researchers to better understand and visualize the interaction between the supervisory agent and worker agents.
+3. **Evaluation Data**: Understanding how this performs in different contexts is key to developing a better AGI architecture.
+4. **Unlock Talking to Agents**: The dialogue functions are there, and we're looking for help on how we can "talk" to these agents from another, say, IPython, to get a look into their state.
 
-## Acknowledgments
+## Installation
 
-We extend our gratitude to the two Python packages, langchain and ray, which have significantly contributed to the development of agent-actors.
+Requires Python: ^3.10
 
-Together, let's explore the potential of Agent Actors and inspire the LLM community to delve deeper into this exciting area of research.
+Install through your choice of package manager:
 
-## Development
+```bash
+poetry add git+https://github.com/shaman-ai/agent-actors.git
+pipenv install git+https://github.com/shaman-ai/agent-actors.git#egg=agent-actors
+```
+
+## Learn Agent Actors in 5 minutes
+
+```python
+from agent_actors.actors import (
+  Agent, # subclass and replace with your own `run` method
+  ChildAgent, # Do and Check
+  ParentAgent, # Plan and Adjust
+  ConsolePrettyPrinter, # Helpful for printing JSON task outputs, pass as a handler to CallbackManager
+)
+```
+
+Read [`test_system.py`](./agent_actors/test_system.py)
+
+## Run Agent Actors
 
 1. Clone the repo
 2. `poetry install --with dev --with typing`
+3. Modify [`test_system.py`](./agent_actors/test_system.py) to your own needs
+4. Run `poetry run pytest -s -k 'test_name_str_to_filter_by'`
 
-Make sure to run `poetry shell` to activate the virtual env!
-
-### REPL-Driven Development
-
-```bash
-poetry run ipython
-```
-
-### Tests
-
-```bash
-poetry run pytest -s # run all tests
-poetry run pytest -s -k 'thinking' # How can we ensure the safe development of Agent?
-```
+You can also run all tests with `poetry run pytest`, but this may take a while to execute, and is likely to hit into API rate limits.
 
 ## License
 
 BUSL-1.1
+
+## Gratefulness
+
+We extend our gratitude to the contributors of the Python packages [langchain](https://langchain.com) and [ray](https://ray.io), without which this wouldn't be possible. We extend our gratitude to the amazing researchers who wrote Generative Simulacra [TODO], ReAct [TODO], and Jeremy Howard [TODO] and FastAI, without which this wouldn't be possible. And to BabyAGI and AutoGPT for inspiring us.
 
 ## Citation
 
@@ -67,7 +86,7 @@ Citation
 Please cite the repo if you use the data or code in this repo.
 
 ```
-@misc{agiactors,
+@misc{agentactors,
   author = {Shaman AI},
   title = {agent-actors: The Potential of Agent with Plan-Do-Check-Adjust and the Actor Model of Concurrency},
   year = {2023},

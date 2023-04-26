@@ -10,7 +10,7 @@ from langchain.chat_models.base import BaseChatModel
 from langchain.schema import BaseRetriever, Document
 from pydantic import BaseModel, Field
 
-from agent_actors.agent_actor import AgentActor
+from agent_actors.actors import AgentActor
 from agent_actors.chains.agent import (
     GenerateInsights,
     MemoryStrength,
