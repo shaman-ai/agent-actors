@@ -1,15 +1,10 @@
-# agent-actors: Parallel LLM Agent Execution Trees
+# agent-actors: LLM Agent Trees
 
-Create your own trees of AI agents that work towards a common objective.
+Create your own trees of AI agents that work towards a common objective. Together, let's explore the potential of Agent Actors and inspire the LLM community to delve deeper into this exciting realm of possibilities!
 
-Together, let's explore the potential of Agent Actors and inspire the LLM community to delve deeper into this exciting realm of possibilities!
+![Execution Plan for Parallel LLM Application](https://user-images.githubusercontent.com/1880797/234443312-8a006245-25bc-47c0-b35b-2c623ed2e300.png)
 
-
-### You should check out the demo video to get a full sense of what this means:
-
-[![Demo](https://img.youtube.com/vi/XiHiOfYOAmc/0.jpg)](https://www.youtube.com/watch?v=XiHiOfYOAmc)
-
-And also the [diagram](./diagram.png), if you're so inclined.
+**Watch this 2-minute demo walkthrough — https://www.loom.com/share/8e60585f069c4a9f8ac9f01204b41704**
 
 ## Key Features
 
@@ -25,22 +20,13 @@ And also the [diagram](./diagram.png), if you're so inclined.
 0. Terminating auto-GPTs that converges across successive runs
 1. Your own research and reporting teams of agents
 2. Simulation-driven organizational behaviour research
-3. Create a developer *team* of AutoGPTs that work for you together
+3. Create a developer *team* of AutoGPTs that code for you together
 4. New kinds of programmatic Agents, say, an EmailAgent that sends an email to a person, waits for them to reply, and uses that reply as its response. Then, you can have GPT4 plan your company's next steps, distribute tasks to AI agents and real humans (using EmailAgents), and then synthesize the result and recommend next steps.
 
 ## Limitations
 
 1. Proof of Concept, not production ready
 2. We've only tested used GPT3.5
-
-## Requests for Pull Requests
-
-We invite contributors to join us in expanding agent-actors by exploring the following ideas:
-
-1. **Improved Agent Prompts**: Develop better prompts for the Plan, Do, Check, and Adjust chains
-2. **Visualization Tooling**: Develop an interface for exploring first, then composing, an execution tree of Agent Actors, allowing researchers to better understand and visualize the interaction between the supervisory agent and worker agents.
-3. **Evaluation Data**: Understanding how this performs in different contexts is key to developing a better AGI architecture.
-4. **Unlock Talking to Agents**: The dialogue functions are there, and we're looking for help on how we can "talk" to these agents from another, say, IPython, to get a look into their state.
 
 ## Installation
 
@@ -56,7 +42,7 @@ pipenv install git+https://github.com/shaman-ai/agent-actors.git#egg=agent-actor
 ## Learn Agent Actors in 5 minutes
 
 ```python
-from agent_actors.actors import (
+from agent_actors import (
   Agent, # subclass and replace with your own `run` method
   ChildAgent, # Do and Check
   ParentAgent, # Plan and Adjust
@@ -74,6 +60,18 @@ from agent_actors.actors import (
 4. Run `poetry run pytest -s -k 'test_name_str_to_filter_by'`
 
 You can also run all tests with `poetry run pytest`, but this may take a while to execute, and is likely to hit into API rate limits.
+
+## Contribute to Agent Actors
+
+Check out this diagram to understand how the system works: https://beta.plectica.com/maps/W26XSGD28
+
+### Requests for Pull Requests
+
+1. **Improved Agent Prompts**: Develop better prompts for the Plan, Do, Check, and Adjust chains
+2. **Visualization Tooling**: Develop an interface for exploring first, then composing, an execution tree of Agent Actors, allowing researchers to better understand and visualize the interaction between the supervisory agent and worker agents.
+3. **Evaluation Data**: Understanding how this performs in different contexts is key to developing a better AGI architecture.
+4. **Unlock Talking to Agents**: The dialogue functions are there, and we're looking for help on how we can "talk" to these agents from another, say, IPython, to get a look into their state.
+5. **Unlock Inter-Agent Communication**: What happens if agents can talk to each other, not just return results to their parents and write memories to the global store?
 
 ## License
 
