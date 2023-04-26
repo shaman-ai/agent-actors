@@ -1,15 +1,8 @@
 # agent-actors: LLM Agent Trees
 
-Create your own trees of AI agents that work towards a common objective.
+Create your own trees of AI agents that work towards a common objective.Watch this 2-minute demo walkthrough — https://www.loom.com/share/8e60585f069c4a9f8ac9f01204b41704
 
 Together, let's explore the potential of Agent Actors and inspire the LLM community to delve deeper into this exciting realm of possibilities!
-
-
-### You should check out the demo video to get a full sense of what this means:
-
-[![Demo](https://img.youtube.com/vi/XiHiOfYOAmc/0.jpg)](https://www.youtube.com/watch?v=XiHiOfYOAmc)
-
-And also the [diagram](./diagram.png), if you're so inclined.
 
 ## Key Features
 
@@ -18,7 +11,6 @@ And also the [diagram](./diagram.png), if you're so inclined.
 * **Automatic Planning and Distribution of Tasks to Agents** Our `ParentAgent` class plans tasks for its children to do and distributes them to be completed in parallel.
 * **Parallel Execution of Agents** `ChildAgent`s work in parallel to Do and Check their results. Before running, they wait for all task dependencies to be resolved and inject that into their context.
 * **Create your own trees of autonomous AI agents** You can nest `ParentAgent`s under `ParentAgent`s, or comingle them with `ChildAgent`s. Use your own vector store, retriever, or embedding function to our `ParentAgent` and `ChildAgent` classes. See how easy it is in [`test_system.py`](./agent_actors/test_system.py)).
-
 
 ## What will you build?
 
@@ -31,16 +23,6 @@ And also the [diagram](./diagram.png), if you're so inclined.
 
 1. Proof of Concept, not production ready
 2. We've only tested used GPT3.5
-
-## Requests for Pull Requests
-
-We invite contributors to join us in expanding agent-actors by exploring the following ideas:
-
-1. **Improved Agent Prompts**: Develop better prompts for the Plan, Do, Check, and Adjust chains
-2. **Visualization Tooling**: Develop an interface for exploring first, then composing, an execution tree of Agent Actors, allowing researchers to better understand and visualize the interaction between the supervisory agent and worker agents.
-3. **Evaluation Data**: Understanding how this performs in different contexts is key to developing a better AGI architecture.
-4. **Unlock Talking to Agents**: The dialogue functions are there, and we're looking for help on how we can "talk" to these agents from another, say, IPython, to get a look into their state.
-5. **Unlock Inter-Agent Communication**: What happens if agents can talk to each other, not just return results to their parents and write memories to the global store?
 
 ## Installation
 
@@ -74,6 +56,18 @@ from agent_actors import (
 4. Run `poetry run pytest -s -k 'test_name_str_to_filter_by'`
 
 You can also run all tests with `poetry run pytest`, but this may take a while to execute, and is likely to hit into API rate limits.
+
+## Contribute to Agent Actors
+
+Check out this diagram to understand how the system works: https://beta.plectica.com/maps/W26XSGD28
+
+### Requests for Pull Requests
+
+1. **Improved Agent Prompts**: Develop better prompts for the Plan, Do, Check, and Adjust chains
+2. **Visualization Tooling**: Develop an interface for exploring first, then composing, an execution tree of Agent Actors, allowing researchers to better understand and visualize the interaction between the supervisory agent and worker agents.
+3. **Evaluation Data**: Understanding how this performs in different contexts is key to developing a better AGI architecture.
+4. **Unlock Talking to Agents**: The dialogue functions are there, and we're looking for help on how we can "talk" to these agents from another, say, IPython, to get a look into their state.
+5. **Unlock Inter-Agent Communication**: What happens if agents can talk to each other, not just return results to their parents and write memories to the global store?
 
 ## License
 
