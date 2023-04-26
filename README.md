@@ -1,8 +1,8 @@
 # agent-actors: LLM Agent Trees
 
-Create your own trees of AI agents that work towards a common objective.Watch this 2-minute demo walkthrough — https://www.loom.com/share/8e60585f069c4a9f8ac9f01204b41704
+Create your own trees of AI agents that work towards a common objective. Together, let's explore the potential of Agent Actors and inspire the LLM community to delve deeper into this exciting realm of possibilities!
 
-Together, let's explore the potential of Agent Actors and inspire the LLM community to delve deeper into this exciting realm of possibilities!
+**Watch this 2-minute demo walkthrough — https://www.loom.com/share/8e60585f069c4a9f8ac9f01204b41704**
 
 ## Key Features
 
