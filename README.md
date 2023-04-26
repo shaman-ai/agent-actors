@@ -1,4 +1,4 @@
-# agent-actors: Parallel LLM Agent Execution Trees
+# agent-actors: LLM Agent Trees
 
 Create your own trees of AI agents that work towards a common objective.
 
@@ -40,6 +40,7 @@ We invite contributors to join us in expanding agent-actors by exploring the fol
 2. **Visualization Tooling**: Develop an interface for exploring first, then composing, an execution tree of Agent Actors, allowing researchers to better understand and visualize the interaction between the supervisory agent and worker agents.
 3. **Evaluation Data**: Understanding how this performs in different contexts is key to developing a better AGI architecture.
 4. **Unlock Talking to Agents**: The dialogue functions are there, and we're looking for help on how we can "talk" to these agents from another, say, IPython, to get a look into their state.
+5. **Unlock Inter-Agent Communication**: What happens if agents can talk to each other, not just return results to their parents and write memories to the global store?
 
 ## Installation
 
