@@ -2,9 +2,11 @@
 
 Create your own trees of AI agents that work towards a common objective. Together, let's explore the potential of Agent Actors and inspire the LLM community to delve deeper into this exciting realm of possibilities!
 
-![Execution Plan for Parallel LLM Application](https://user-images.githubusercontent.com/1880797/234443312-8a006245-25bc-47c0-b35b-2c623ed2e300.png)
-
 **Watch this 2-minute demo walkthrough — https://www.loom.com/share/8e60585f069c4a9f8ac9f01204b41704**
+
+Here's a sample generated execution plan:
+
+![Execution Plan for Parallel LLM Application](https://user-images.githubusercontent.com/1880797/234443312-8a006245-25bc-47c0-b35b-2c623ed2e300.png)
 
 ## Key Features
 
