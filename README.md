@@ -1,4 +1,4 @@
-# Agent Actors: Parallelized Agent Trees Performing Plan-Do-Check-Adjust Cycles
+# Agent Actors: Plan-Do-Check-Adjust with Parallelized LLM Agent Trees
 
 Create your own trees of AI agents that work towards a common objective. Together, let's explore the potential of Agent Actors and inspire the LLM community to delve deeper into this exciting realm of possibilities!
 
@@ -90,7 +90,7 @@ Please cite the repo if you use the data or code in this repo.
 ```
 @misc{agentactors,
   author = {Shaman AI},
-  title = {Agent Actors: Parallelized Agent Trees Performing Plan-Do-Check-Adjust Cycles},
+  title = {Agent Actors: Plan-Do-Check-Adjust with Parallelized LLM Agent Trees},
   year = {2023},
   publisher = {GitHub},
   journal = {GitHub repository},
