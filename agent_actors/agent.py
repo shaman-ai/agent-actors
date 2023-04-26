@@ -11,12 +11,8 @@ from langchain.schema import BaseRetriever, Document
 from pydantic import BaseModel, Field
 
 from agent_actors.actors import AgentActor
-from agent_actors.chains.agent import (
-    GenerateInsights,
-    MemoryStrength,
-    Synthesis,
-    WorkingMemory,
-)
+from agent_actors.chains.agent import (GenerateInsights, MemoryStrength,
+                                       Synthesis, WorkingMemory)
 
 
 class Agent(BaseModel):
@@ -179,15 +175,18 @@ class Agent(BaseModel):
             return "[Empty]"
 
         self.working_memory_state = "\n".join(
-            self.working_memory(
-                inputs=dict(
-                    context=self.get_header(),
-                    task=self.task,
-                    relevant_memories="\n".join(
-                        f"{m.page_content}" for m in relevant_memories
-                    ),
-                )
-            )["items"]
+            f"{n}. {mem}"
+            for (n, mem) in enumerate(
+                self.working_memory(
+                    inputs=dict(
+                        context=self.get_header(),
+                        task=self.task,
+                        relevant_memories="\n".join(
+                            f"{m.page_content}" for m in relevant_memories
+                        ),
+                    )
+                )["items"]
+            )
         )
 
         self.last_refreshed = datetime.utcnow()
@@ -200,6 +199,7 @@ class Agent(BaseModel):
     ) -> Tuple[str, str, str]:
         if last_k is None:
             last_k = self.reflect_every
+
         observations = self.long_term_memory.memory_stream[-last_k:]
         if not any(observations):
             return []

@@ -159,3 +159,35 @@ class TestSystem:
         cyrus.run(
             task="I need an executive report on Artificial General Intelligence and a list of 5 related jokes and quotes."
         )
+
+    def test_writing_a_technical_blog_post(self):
+        writer = self.create_child(
+            "Writer",
+            traits=[
+                "brilliant technical writer",
+                "programmer in a past life",
+            ],
+        )
+        researcher = self.create_child(
+            "Researcher",
+            traits=[
+                "expert researcher",
+                "expert programmer",
+            ],
+        )
+        cto = self.create_parent(
+            "CTO",
+            traits=["kind human", "expert programmer", "visionary technologist"],
+            children={2: researcher, 42: writer},
+        )
+
+        with open("./README.md", "r") as f:
+            """
+            You can load your actors with memories, here, since all actors share
+            the same vectorstore, this will be available to all actors.
+            """
+            cto.add_memory(f.read())
+
+        cto.run(
+            task=f"Write a blog post about Agent Actors, a new python repository that helps you build trees of AI agents that work together to solve more complex problems. Use your memory rather than searches to learn more about Agent Actors. If you're going to search, then search for the Actor Model of Concurrency, Elixir / OTP and Plan-Do-Check-Act cycles"
+        )

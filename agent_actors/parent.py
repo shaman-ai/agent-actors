@@ -35,6 +35,11 @@ class ParentAgent(Agent):
             self.status = "running"
             self.task = task
 
+            for x in working_memory:
+                if isinstance(x, AgentFinish):
+                    import ipdb
+
+                    ipdb.set_trace()
             context = self.get_context() + "\n".join(ray.get(working_memory))
 
             planned_tasks = [

@@ -13,15 +13,16 @@ And also the [diagram](./diagram.png), if you're so inclined.
 
 ## Key Features
 
+* **Time Weighted Long-Term Memory** using `langchain.retrievers.TimeWeightedVectoreStoreRetriever`
 * **Synthesized Working Memory**: An agent draws insights from and synthesizes their relevant memories into a "working memory" of 1–12 items for use with zero-shot prompts.
 * Implements the **Plan-Do-Check-Adjust (PDCA)** operational framework for continuous improvement.
 * **Automatic Planning and Distribution of Tasks to Agents** Our `ParentAgent` class plans tasks for its children to do and distributes them to be completed in parallel.
 * **Parallel Execution of Agents** `ChildAgent`s work in parallel to Do and Check their results. Before running, they wait for all task dependencies to be resolved and inject that into their context.
-* **Create your own trees of autonomous AI agents** You can nest `ParentAgent`s under `ParentAgent`s, or comingle them with `ChildAgent`s. Use your own vector store, retriever, or embedding function to our `ParentAgent` and `ChildAgent` classes. See how easy it is in [`test_system.py`](./agent_actors/test_system.py)).
-
+* **Create your own trees of autonomous AI agents** You can nest `ParentAgent`s under `ParentAgent`s, or comingle them with `ChildAgent`s. Use your own vector store, retriever, or embedding function with our `ParentAgent` and `ChildAgent` classes. See how easy it is in [`test_system.py`](./agent_actors/test_system.py).
 
 ## What will you build?
 
+0. Terminating auto-GPTs that converges across successive runs
 1. Your own research and reporting teams of agents
 2. Simulation-driven organizational behaviour research
 3. Create a developer *team* of AutoGPTs that work for you together
