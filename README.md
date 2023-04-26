@@ -24,7 +24,7 @@ And also the [diagram](./diagram.png), if you're so inclined.
 
 1. Your own research and reporting teams of agents
 2. Simulation-driven organizational behaviour research
-3. Create a developer *team* of AutoGPTs that work for you together
+3. Create a developer *team* of AutoGPTs that code for you together
 4. New kinds of programmatic Agents, say, an EmailAgent that sends an email to a person, waits for them to reply, and uses that reply as its response. Then, you can have GPT4 plan your company's next steps, distribute tasks to AI agents and real humans (using EmailAgents), and then synthesize the result and recommend next steps.
 
 ## Limitations
