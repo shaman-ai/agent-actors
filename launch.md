@@ -52,4 +52,4 @@ Agent Actors is an open-source project, and we welcome contributions from the co
 
 By exploring the Actor Model of Concurrency and harnessing the potential of parallel execution, Agent Actors provides a powerful new approach to AI collaboration. Whether you're a developer looking to build customized agent trees or a company interested in partnering to create tailored solutions, Agent Actors offers an exciting new path for AI innovation.
 
-At Shaman AI, we're excited to partner with companies doing meaningful work to improve their workflows using agent tree architectures.
+At Shaman AI, we're excited to partner with companies doing meaningful work to improve their workflows using agent tree architectures. We're curious to learn more about what you're working on, and how we can help &mdash; If you're interested in collaborating, please [reach out here](https://edendao.typeform.com/to/CTUCoCNy)!
