@@ -2,7 +2,7 @@
 name = "agent-actors"
 version = "0.1.0"
 description = "a proof-of-concept inspired by BabyAGI, the Plan-Do-Check-Adjust (PDCA) cycle, and the actor model of concurrency"
-authors = ["Cyrus Nouroozi"]
+authors = ["Shaman AI <hello@shaman.ai>"]
 license = "BUSL-1.1"
 readme = "README.md"
 packages = [{ include = "agent_actors" }]
