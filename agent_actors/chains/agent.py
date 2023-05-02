@@ -17,6 +17,9 @@ class NaturalLanguageListChain(LLMChain):
         ]
         return {"items": items}
 
+    def run(self, **kwargs) -> Dict[str, List[str]]:
+        return self._call(inputs=kwargs)[self.output_key]
+
 
 class WorkingMemory(NaturalLanguageListChain):
     @classmethod

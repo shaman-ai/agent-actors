@@ -17,7 +17,7 @@ class ReActAgent(ZeroShotAgent):
             prefix="Complete the task below. Be very specific. You have access to the following tools:",
             format_instructions=dedent(
                 """\
-                Use the following format. You must prepend your conclusion with "Final Answer:":
+                Use the following format.
 
                 Task: the input task you must complete
                 Thought: you should always think about what to do
@@ -28,6 +28,8 @@ class ReActAgent(ZeroShotAgent):
                 ... (this Thought/Reasoning/Action/Action Input/Observation cycle can repeat N times)
                 Thought: The task has been completed appropriately and accurately
                 Final Answer: the final result of this task, directly, not summarized in any way
+
+                When you're done your work, or you have the answer, start by saying "Final Answer: "
                 """
             ),
             suffix=dedent(

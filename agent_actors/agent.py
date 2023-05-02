@@ -11,8 +11,12 @@ from langchain.schema import BaseRetriever, Document
 from pydantic import BaseModel, Field
 
 from agent_actors.actors import AgentActor
-from agent_actors.chains.agent import (GenerateInsights, MemoryStrength,
-                                       Synthesis, WorkingMemory)
+from agent_actors.chains.agent import (
+    GenerateInsights,
+    MemoryStrength,
+    Synthesis,
+    WorkingMemory,
+)
 
 
 class Agent(BaseModel):
@@ -177,15 +181,13 @@ class Agent(BaseModel):
         self.working_memory_state = "\n".join(
             f"{n}. {mem}"
             for (n, mem) in enumerate(
-                self.working_memory(
-                    inputs=dict(
-                        context=self.get_header(),
-                        task=self.task,
-                        relevant_memories="\n".join(
-                            f"{m.page_content}" for m in relevant_memories
-                        ),
-                    )
-                )["items"]
+                self.working_memory.run(
+                    context=self.get_header(),
+                    task=self.task,
+                    relevant_memories="\n".join(
+                        f"{m.page_content}" for m in relevant_memories
+                    ),
+                )
             )
         )
 
@@ -204,27 +206,25 @@ class Agent(BaseModel):
         if not any(observations):
             return []
 
-        return self.synthesis(
+        return self.synthesis.run(
             context=self.get_header(),
             task=self.task,
             memories="\n".join(o.page_content for o in observations),
-        )["items"]
+        )
 
     def generate_insights(self, topic: str) -> List[str]:
         related_memories = self.fetch_memories(topic)
         if not any(related_memories):
             return []
 
-        insights = self.insights_generator(
-            input=dict(
-                context=self.get_header(),
-                topic=topic,
-                related_statements="\n".join(
-                    f"{i+1}. {memory.page_content}"
-                    for i, memory in enumerate(related_memories)
-                ),
-            )
-        )["items"]
+        insights = self.insights_generator.run(
+            context=self.get_header(),
+            topic=topic,
+            related_statements="\n".join(
+                f"{i+1}. {memory.page_content}"
+                for i, memory in enumerate(related_memories)
+            ),
+        )
 
         for insight in insights:
             self._add_memory(insight)
