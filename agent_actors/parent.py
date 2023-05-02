@@ -108,14 +108,14 @@ class ParentAgent(Agent):
 
             self.pause_to_reflect()
 
-            reflection = self.adjust.run(
+            adjustment = self.adjust.run(
                 context=self.get_context(),
                 task=self.task,
                 results="\n".join(task_results),
             )
 
-            if reflection["confidence"] >= 8:
-                return AgentFinish(reflection, "success")
+            if adjustment["confidence"] >= 8:
+                return AgentFinish(adjustment, "success")
 
             return AgentAction("Human", "What should my next task be?", "info")
         finally:
