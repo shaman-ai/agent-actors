@@ -74,9 +74,15 @@ Check out this diagram to understand how the system works: https://beta.plectica
 4. **Unlock Talking to Agents**: The dialogue functions are there, and we're looking for help on how we can "talk" to these agents from another, say, IPython, to get a look into their state.
 5. **Unlock Inter-Agent Communication**: What happens if agents can talk to each other, not just return results to their parents and write memories to the global store?
 
-## License
+## License (LGPLv3)
 
-BUSL-1.1
+Our project is licensed under the [GNU Lesser General Public License v3 (LGPLv3)](https://www.gnu.org/licenses/lgpl-3.0.en.html). This provides a balance between open-source values and flexibility for developers. Key points include:
+
+- You can use this as a library in your closed-source software.
+- Modifications to our library must be released under an LGPLv3 license, the easiest way to do this is to submit a PR to this project.
+- Contributors benefit from patent protection.
+
+For the full legal text, see the [LICENSE](./LICENSE) file.
 
 ## Gratefulness
 
