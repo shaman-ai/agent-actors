@@ -87,7 +87,6 @@ class Check(LLMChain):
 
                     Do not embellish.
 
-                    Task: \
                     """
                 ),
             ),
