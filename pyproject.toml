@@ -11,7 +11,7 @@ packages = [{ include = "agent_actors" }]
 line-length = -1
 
 [tool.poetry.dependencies]
-python = ">=3.10.9,<4.0"
+python = ">=3.10"
 aiohttp = "^3.8.4"
 pydantic = "^1.10.7"
 langchain = "^0.0.153"
@@ -19,7 +19,7 @@ wolframalpha = "^5.0.0"
 python-dotenv = "^1.0.0"
 openai = "^0.27.4"
 wikipedia = "^1.4.0"
-tiktoken = "^0.3.3"
+tiktoken = "^0.4.0"
 gptcache = "^0.1.17"
 termcolor = "^2.2.0"
 ray = { extras = ["default"], version = "^2.3.1" }
