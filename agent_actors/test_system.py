@@ -4,7 +4,7 @@ import ray
 from dotenv import load_dotenv
 from faiss import IndexFlatL2
 from langchain.agents import Tool
-from langchain.callbacks import BaseCallbackManager
+from langchain.callbacks.base import BaseCallbackManager
 from langchain.chat_models import ChatOpenAI
 from langchain.chat_models.base import BaseChatModel
 from langchain.docstore import InMemoryDocstore
