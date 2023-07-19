@@ -1,7 +1,8 @@
 from pprint import pprint
 from typing import Any, Dict, List
 
-from langchain.callbacks import CallbackManager, StdOutCallbackHandler
+from langchain.callbacks import StdOutCallbackHandler
+from langchain.callbacks.manager import CallbackManager
 
 
 class ConsolePrettyPrintManager(CallbackManager):
