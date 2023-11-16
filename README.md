@@ -37,7 +37,9 @@ Install through your choice of package manager:
 
 ```bash
 poetry add git+https://github.com/shaman-ai/agent-actors.git
-pipenv install git+https://github.com/shaman-ai/agent-actors.git#egg=agent-actors
+git clone https://github.com/shaman-ai/agent-actors
+cd agent-actors
+poetry install --with dev --with typing
 ```
 
 ## Learn Agent Actors in 5 minutes
@@ -55,8 +57,6 @@ from agent_actors import (
 
 ## Run Agent Actors
 
-1. Clone the repo
-2. `poetry install --with dev --with typing`
 3. Modify [`test_system.py`](./agent_actors/test_system.py) to your own needs
 4. Run `poetry run pytest -s -k 'test_name_str_to_filter_by'`
 
